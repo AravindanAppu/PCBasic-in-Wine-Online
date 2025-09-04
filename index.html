@@ -1,46 +1,223 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>PC-BASIC in Browser (BoxedWine)</title>
+  <title>GW-BASIC Virtual Keyboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <script src="https://js-dos.com/6.22/current/js-dos.js"></script>
   <style>
-    body { font-family: monospace; margin: 0; padding: 0; }
-    #screen { width: 100%; height: 90vh; background: black; color: white; }
+    body {
+      background: black;
+      margin: 0;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      font-family: 'Courier New', monospace;
+    }
+    #screen-container {
+      width: 100vw;
+      height: 45vh;
+    }
+    #dos-root {
+      width: 100%;
+      height: 100%;
+      border: 2px solid #666;
+    }
+    #keyboard-container {
+      width: 100vw;
+      height: 50vh;
+      background: #333;
+      display: flex;
+      flex-direction: column;
+      padding: 6px;
+      padding-bottom: env(safe-area-inset-bottom);
+      box-sizing: border-box;
+      gap: 4px;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+    }
+    .key-row {
+      display: flex;
+      flex-direction: row;
+      justify-content: center;
+      gap: 4px;
+    }
+    .key {
+      background: #444;
+      color: white;
+      font-size: 1.1em;
+      font-weight: bold;
+      text-align: center;
+      border-radius: 6px;
+      flex: 1;
+      min-width: 32px;
+      padding: 10px 0;
+      cursor: pointer;
+      user-select: none;
+    }
+    .key:active {
+      background: #777;
+      transform: translateY(1px);
+    }
+    .special {
+      flex: 1.5;
+      background: #4a3c1c;
+    }
+    .wide {
+      flex: 3;
+    }
+    .fkey {
+      font-size: 0.8em;
+      font-weight: normal;
+    }
+    .shift-active {
+      background: #c96 !important;
+    }
   </style>
 </head>
 <body>
-  <h1>PC-BASIC in Browser</h1>
-  <div id="screen"></div>
+  <div id="screen-container">
+    <canvas id="dos-root"></canvas>
+  </div>
 
-  <h2>Printer Output (LPRINT):</h2>
-  <textarea id="printer" rows="10" style="width:100%;" readonly></textarea>
-  <br>
-  <button onclick="downloadOutput()">Download Output</button>
-  <button onclick="window.print()">Print</button>
+  <div id="keyboard-container">
+    <div class="key-row">
+      <div class="key fkey" onclick="pressKey(112)">F1</div>
+      <div class="key fkey" onclick="pressKey(113)">F2</div>
+      <div class="key fkey" onclick="pressKey(114)">F3</div>
+      <div class="key fkey" onclick="pressKey(115)">F4</div>
+      <div class="key fkey" onclick="pressKey(116)">F5</div>
+      <div class="key fkey" onclick="pressKey(117)">F6</div>
+      <div class="key fkey" onclick="pressKey(118)">F7</div>
+      <div class="key fkey" onclick="pressKey(119)">F8</div>
+      <div class="key fkey" onclick="pressKey(120)">F9</div>
+      <div class="key fkey" onclick="pressKey(121)">F10</div>
+    </div>
+    <div class="key-row">
+      <div class="key" onclick="pressKey(49)">1</div>
+      <div class="key" onclick="pressKey(50)">2</div>
+      <div class="key" onclick="pressKey(51)">3</div>
+      <div class="key" onclick="pressKey(52)">4</div>
+      <div class="key" onclick="pressKey(53)">5</div>
+      <div class="key" onclick="pressKey(54)">6</div>
+      <div class="key" onclick="pressKey(55)">7</div>
+      <div class="key" onclick="pressKey(56)">8</div>
+      <div class="key" onclick="pressKey(57)">9</div>
+      <div class="key" onclick="pressKey(48)">0</div>
+    </div>
+    <div class="key-row">
+      <div class="key" onclick="pressKey(81)">Q</div>
+      <div class="key" onclick="pressKey(87)">W</div>
+      <div class="key" onclick="pressKey(69)">E</div>
+      <div class="key" onclick="pressKey(82)">R</div>
+      <div class="key" onclick="pressKey(84)">T</div>
+      <div class="key" onclick="pressKey(89)">Y</div>
+      <div class="key" onclick="pressKey(85)">U</div>
+      <div class="key" onclick="pressKey(73)">I</div>
+      <div class="key" onclick="pressKey(79)">O</div>
+      <div class="key" onclick="pressKey(80)">P</div>
+    </div>
+    <div class="key-row">
+      <div class="key" onclick="pressKey(65)">A</div>
+      <div class="key" onclick="pressKey(83)">S</div>
+      <div class="key" onclick="pressKey(68)">D</div>
+      <div class="key" onclick="pressKey(70)">F</div>
+      <div class="key" onclick="pressKey(71)">G</div>
+      <div class="key" onclick="pressKey(72)">H</div>
+      <div class="key" onclick="pressKey(74)">J</div>
+      <div class="key" onclick="pressKey(75)">K</div>
+      <div class="key" onclick="pressKey(76)">L</div>
+      <div class="key special" onclick="pressKey(13)">⏎</div>
+    </div>
+    <div class="key-row">
+      <div id="shift-key" class="key special" onclick="toggleShift()">⇧</div>
+      <div class="key" onclick="pressKey(90)">Z</div>
+      <div class="key" onclick="pressKey(88)">X</div>
+      <div class="key" onclick="pressKey(67)">C</div>
+      <div class="key" onclick="pressKey(86)">V</div>
+      <div class="key" onclick="pressKey(66)">B</div>
+      <div class="key" onclick="pressKey(78)">N</div>
+      <div class="key" onclick="pressKey(77)">M</div>
+      <div class="key special" onclick="pressKey(8)">⌫</div>
+    </div>
+    <div class="key-row">
+      <div class="key" onclick="pressKey(190)">.</div>
+      <div class="key" onclick="pressKey(188)">,</div>
+      <div class="key" onclick="pressKey(191)">/</div>
+      <div class="key wide special" onclick="pressKey(32)">SPACE</div>
+      <div class="key" onclick="pressKey(186)">;</div>
+      <div class="key" onclick="pressKey(222)">'</div>
+      <div class="key" onclick="pressKey(189)">-</div>
+      <div class="key" onclick="pressKey(187)">=</div>
+    </div>
+  </div>
 
-  <script src="boxedwine-shell.js"></script>
   <script>
-    async function startPCBasic() {
-      await BoxedWine.run({
-        root: "wine-root.zip",        
-        exe: "C:/pcbasic.exe",        
-        args: ["--ltp", "file:printout.txt"], 
-        canvasId: "screen",
-        storageMode: BoxedWine.STORAGE_LOCAL_STORAGE
+    const dosRoot = document.getElementById("dos-root");
+    let ci = null;
+    let shiftActive = false;
+
+    Dos(dosRoot, { wdosboxUrl: "https://js-dos.com/6.22/current/wdosbox.js" })
+      .ready((fs, main) => {
+        fs.extract("basic.zip").then(() => {
+          main(["-c","mount d .","-c","d:","-c","gwbasic"])
+            .then(client => ci = client);
+        });
       });
+
+    function simulateKeyEvent(keyCode, pressed) {
+      const eventType = pressed ? "keydown" : "keyup";
+      const event = document.createEvent("KeyboardEvent");
+      if (event.initKeyboardEvent) {
+        event.initKeyboardEvent(eventType, true, true, window, false, false, false, false, keyCode, 0);
+      } else {
+        event.initKeyEvent(eventType, true, true, window, false, false, false, false, keyCode, 0);
+      }
+      Object.defineProperty(event, "keyCode", { get: () => keyCode });
+      Object.defineProperty(event, "which", { get: () => keyCode });
+      document.dispatchEvent(event);
     }
 
-    function downloadOutput() {
-      let text = BoxedWine.readFile("/printout.txt");
-      document.getElementById("printer").value = text;
-      let blob = new Blob([text], { type: "text/plain" });
-      let link = document.createElement("a");
-      link.href = URL.createObjectURL(blob);
-      link.download = "printout.txt";
-      link.click();
+    function toggleShift() {
+      shiftActive = !shiftActive;
+      document.getElementById("shift-key").classList.toggle("shift-active", shiftActive);
     }
 
-    startPCBasic();
+    function pressKey(code) {
+      if (shiftActive) {
+        const shiftedMap = {
+          49:33,50:64,51:35,52:36,53:37,54:94,55:38,56:42,57:40,48:41,
+          186:58,222:34,188:60,190:62,191:63,189:95,187:43
+        };
+        if (code >= 65 && code <= 90) {
+          simulateKeyEvent(code,true);
+          simulateKeyEvent(code,false);
+        } else if (shiftedMap[code]) {
+          simulateKeyEvent(shiftedMap[code],true);
+          simulateKeyEvent(shiftedMap[code],false);
+        } else {
+          simulateKeyEvent(code,true);
+          simulateKeyEvent(code,false);
+        }
+        shiftActive=false;
+        document.getElementById("shift-key").classList.remove("shift-active");
+      } else {
+        simulateKeyEvent(code,true);
+        simulateKeyEvent(code,false);
+      }
+      if (navigator.vibrate) navigator.vibrate(20);
+    }
+
+    // Safe audio context fix
+    ["click","touchstart"].forEach(evt => {
+      document.addEventListener(evt, () => {
+        if (ci && ci.audioContext && ci.audioContext.state === "suspended") {
+          ci.audioContext.resume();
+        }
+      }, { once:true });
+    });
   </script>
 </body>
 </html>
+
