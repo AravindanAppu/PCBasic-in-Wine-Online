@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>PC-BASIC in Browser (BoxedWine)</title>
+  <style>
+    body { font-family: monospace; margin: 0; padding: 0; }
+    #screen { width: 100%; height: 90vh; background: black; color: white; }
+  </style>
+</head>
+<body>
+  <h1>PC-BASIC in Browser</h1>
+  <div id="screen"></div>
+
+  <h2>Printer Output (LPRINT):</h2>
+  <textarea id="printer" rows="10" style="width:100%;" readonly></textarea>
+  <br>
+  <button onclick="downloadOutput()">Download Output</button>
+  <button onclick="window.print()">Print</button>
+
+  <script src="boxedwine-shell.js"></script>
+  <script>
+    async function startPCBasic() {
+      await BoxedWine.run({
+        root: "wine-root.zip",        
+        exe: "C:/pcbasic.exe",        
+        args: ["--ltp", "file:printout.txt"], 
+        canvasId: "screen",
+        storageMode: BoxedWine.STORAGE_LOCAL_STORAGE
+      });
+    }
+
+    function downloadOutput() {
+      let text = BoxedWine.readFile("/printout.txt");
+      document.getElementById("printer").value = text;
+      let blob = new Blob([text], { type: "text/plain" });
+      let link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = "printout.txt";
+      link.click();
+    }
+
+    startPCBasic();
+  </script>
+</body>
+</html>
