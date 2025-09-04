@@ -161,7 +161,7 @@
     Dos(dosRoot, { wdosboxUrl: "https://js-dos.com/6.22/current/wdosbox.js" })
       .ready((fs, main) => {
         fs.extract("basic.zip").then(() => {
-          main(["-c","mount d .","-c","d:","-c","pcbasic.com"])
+          main(["-c","mount d .","-c","d:","-c","cd gwbasic","-c","pcbasic.com"])
             .then(client => ci = client);
         });
       });
