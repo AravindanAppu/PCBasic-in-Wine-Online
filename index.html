@@ -1,147 +1,48 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Run GW-BASIC in Browser with DOSBox-X</title>
-  <script src="https://cdn.jsdelivr.net/npm/dosbox-x@latest/dist/dosbox-x.js"></script>
-  <style>
-    body {
-      font-family: 'Courier New', monospace;
-      background-color: #1e1e1e;
-      color: #d0d0d0;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 20px;
-    }
-    h1 {
-      color: #00ff00;
-    }
-    #dosbox {
-      width: 800px;
-      height: 600px;
-      border: 1px solid #00ff00;
-      margin-top: 20px;
-    }
-    .controls {
-      margin-top: 15px;
-    }
-    button {
-      background-color: #008000;
-      color: white;
-      border: none;
-      padding: 10px 15px;
-      font-size: 16px;
-      cursor: pointer;
-      margin: 0 5px;
-    }
-    button:hover {
-      background-color: #006000;
-    }
-    .info {
-      margin-top: 20px;
-      max-width: 800px;
-      font-size: 14px;
-      line-height: 1.5;
-    }
-  </style>
+  <meta charset="UTF-8">
+  <title>GWBASIC in DOSBox-X</title>
+  <script src="https://unpkg.com/dosbox-x@latest/dist/dosbox-x.min.js"></script>
 </head>
 <body>
-
-  <h1>GW-BASIC Emulator (via DOSBox-X)</h1>
-  <div id="dosbox"></div>
-
-  <div class="controls">
-    <button id="runBasic">Run GW-BASIC</button>
-    <button id="loadZip">Load .ZIP with .BAS Files</button>
-  </div>
-
-  <div class="info">
-    <p><strong>Instructions:</strong></p>
-    <ol>
-      <li>Click "Load .ZIP" and select your ZIP file containing GW-BASIC.EXE and *.BAS files.</li>
-      <li>Click "Run GW-BASIC" to start the emulator and auto-execute GWBASIC.EXE.</li>
-      <li>Your .BAS programs will run. Any <code>LPRINT</code> command outputs to <code>LPT1:</code>, which we redirect to a downloadable text file.</li>
-      <li>The LPRINT output will be saved as <code>lprint_output.txt</code> and offered for download.</li>
-    </ol>
-    <p><strong>Note:</strong> This uses DOSBox-X compiled with WebAssembly. Full compatibility depends on the original program's requirements.</p>
-  </div>
+  <div id="dosbox-container" style="width:800px; height:600px;"></div>
+  <input type="file" id="zipInput" accept=".zip" />
 
   <script>
-    // Initialize DOSBox-X
-    let dosbox;
-    let lprintData = "";
+    document.getElementById('zipInput').addEventListener('change', function(event) {
+      const file = event.target.files[0];
+      if (!file) return;
 
-    window.onload = function () {
-      dosbox = new DOSBox({
-        id: "dosbox",
-        autostart: false,
-        memsize: 16,
-        cpu: "386_slow",
-        onwritefile: function (filename) {
-          if (filename === "LPT1") {
-            const content = dosbox.fs.readTextFile(filename);
-            lprintData += content;
-            // Trigger download of accumulated LPRINT output
-            downloadStringAsFile(lprintData, "lprint_output.txt");
-            // Optional: clear after download
-            dosbox.fs.deleteFile("LPT1");
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const arrayBuffer = e.target.result;
+
+        // Initialize DOSBox-X
+        const dosbox = new Dosbox({
+          id: "dosbox-container",
+          onload: async function(dosbox) {
+            // Mount the ZIP file as drive C
+            await dosbox.mount({
+              mountpoint: "c",
+              type: "zip",
+              data: arrayBuffer
+            });
+
+            // Switch to C: and run GWBASIC
+            dosbox.run("c:");
+            dosbox.run("GWBASIC.EXE");
+
+            // You can also auto-load a BAS file inside BASIC with:
+            // dosbox.run("LOAD \"YOUR_FILE.BAS\"");
           }
-        }
-      });
-    };
+        });
 
-    // Setup file input listener
-    document.getElementById("loadZip").addEventListener("click", function () {
-      const input = document.createElement("input");
-      input.type = "file";
-      input.accept = ".zip";
-      input.onchange = (e) => {
-        const file = e.target.files[0];
-        if (file) {
-          const reader = new FileReader();
-          reader.onload = function (event) {
-            const zipArray = new Uint8Array(event.target.result);
-            // Mount the ZIP as a virtual C: drive
-            dosbox.mount("C", zipArray, file.name);
-            alert("ZIP mounted as C: drive. You can now run GW-BASIC.");
-          };
-          reader.readAsArrayBuffer(file);
-        }
+        dosbox.start();
       };
-      input.click();
+
+      reader.readAsArrayBuffer(file);
     });
-
-    // Run GW-BASIC and redirect LPT1
-    document.getElementById("runBasic").addEventListener("click", function () {
-      // Redirect LPT1 to a file in emulated FS
-      dosbox.execute("mount lpt1 lpt1.txt");
-      dosbox.execute("lpt1:");
-      dosbox.execute("echo. > LPT1"); // Initialize LPT1 capture
-      dosbox.execute("C:");
-      dosbox.execute("cd \\");
-      dosbox.execute("GWBASIC.EXE");
-    });
-
-    // Utility: Download string as file
-    function downloadStringAsFile(content, filename) {
-      const blob = new Blob([content], { type: "text/plain" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = filename;
-      a.click();
-      URL.revokeObjectURL(url);
-    }
-
-    // Optional: Auto-download LPRINT output every 5 seconds
-    setInterval(() => {
-      if (lprintData) {
-        downloadStringAsFile(lprintData, "lprint_output_" + new Date().toISOString().slice(0, 19).replace(/:/g, "-") + ".txt");
-        lprintData = ""; // Clear after download
-      }
-    }, 5000);
   </script>
 </body>
 </html>
