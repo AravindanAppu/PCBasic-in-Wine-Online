@@ -1,102 +1,78 @@
-<!DOCTYPE html>
-<html lang="en">
+<!doctype html>
+<html>
 <head>
-  <meta charset="UTF-8" />
-  <title>PC-BASIC in Browser Terminal</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm/css/xterm.css" />
+  <meta charset="utf-8" />
+  <title>PC-BASIC via Pyodide</title>
   <style>
-    body, html {
-      height: 100%;
-      margin: 0;
-    }
-    #terminal {
-      height: 100vh;
-      width: 100vw;
-    }
+    body { background:#000; color:#0f0; font-family:monospace; margin:0; }
+    #terminal { white-space: pre-wrap; padding:10px; height:80vh;
+                overflow-y:auto; border-bottom:1px solid #0f0; }
+    #inputline { width:100%; background:#111; color:#0f0; border:none;
+                 padding:5px; font-family:monospace; }
   </style>
 </head>
 <body>
   <div id="terminal"></div>
+  <input id="inputline" placeholder="Type here & press Enter…" autofocus />
+  
+  <script type="module">
+    import { loadPyodide } from "https://cdn.jsdelivr.net/pyodide/v0.24.0/full/pyodide.mjs";
+    const term = document.getElementById("terminal");
+    const input = document.getElementById("inputline");
 
-  <!-- xterm.js -->
-  <script src="https://cdn.jsdelivr.net/npm/xterm/lib/xterm.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit/lib/xterm-addon-fit.js"></script>
+    function printToTerm(txt) {
+      term.textContent += txt;
+      term.scrollTop = term.scrollHeight;
+    }
 
-  <!-- Pyodide -->
-  <script src="https://cdn.jsdelivr.net/pyodide/v0.23.4/full/pyodide.js"></script>
+    // Start Pyodide
+    const pyodide = await loadPyodide({
+      stdout: txt => printToTerm(txt + "\n"),
+      stderr: txt => printToTerm("\nERR: " + txt + "\n")
+    });
+    await pyodide.loadPackage("micropip");
 
-  <script>
-    const term = new Terminal();
-    const fitAddon = new window.TerminalAddonFit.FitAddon();
-    term.loadAddon(fitAddon);
-    term.open(document.getElementById('terminal'));
-    fitAddon.fit();
+    // Install pcbasic wheel
+    await pyodide.runPythonAsync(`
+import micropip
+await micropip.install('/pcbasic-2.0.7-py2.py3-none-any.whl')
+print("PC-BASIC installed.")
+`);
 
-    let pyodideReady = false;
-    let pyodide;
+    // Copy a BASIC program from server
+    const demo = await fetch("basic/ALLFOOT.BAS").then(r => r.text());
+    pyodide.FS.writeFile("ALLFOOT.BAS", demo);
 
-    (async () => {
-      term.writeln("Loading Pyodide...");
-      pyodide = await loadPyodide();
-      await pyodide.loadPackage("micropip");
-      term.writeln("Pyodide loaded.");
+    // Hook input() to browser
+    await pyodide.runPythonAsync(`
+import sys, builtins, time
+_input_buffer = []
+def js_input(prompt=""):
+    sys.stdout.write(prompt); sys.stdout.flush()
+    while not _input_buffer: time.sleep(0.05)
+    return _input_buffer.pop(0)
+builtins.input = js_input
+`);
 
-      // Install PCBASIC via pip
-      term.writeln("Installing PCBASIC...");
-      await pyodide.runPythonAsync(`
-        import micropip
-        await micropip.install("pcbasic")
-        print("PCBASIC installed.")
-      `);
-
-      pyodideReady = true;
-      term.writeln("Type 'runbasic' to start PC-BASIC.");
-    })();
-
-    // Handle user input
-    term.onKey((data) => {
-      const input = data.key;
-
-      if (input === '\r') { // Enter key
-        const line = term._core.buffer.lines.get(term._core.buffer.ybase + term._core.buffer.y).translateToString();
-        handleCommand(line.trim());
-      } else if (input === '\x7F') { // Backspace
-        if (term._core.buffer.x > 0) {
-          term._core.buffer.x--;
-          term._core.buffer.lines.get(term._core.buffer.ybase + term._core.buffer.y).setCell(term._core.buffer.x, { ch: ' ', fg: null, bg: null, chWidth: 1 });
-          term.refresh(term._core.buffer.y, term._core.buffer.y);
-        }
-      } else {
-        term.write(data.key);
+    input.addEventListener("keydown", e => {
+      if (e.key === "Enter") {
+        const val = input.value;
+        printToTerm(val + "\\n");
+        pyodide.runPython(\`_input_buffer.insert(0, "\${val}")\`);
+        input.value = "";
       }
     });
 
-    async function handleCommand(command) {
-      term.writeln(""); // New line
-
-      if (!pyodideReady) {
-        term.writeln("Still loading... Please wait.");
-        return;
-      }
-
-      if (command === "runbasic") {
-        term.writeln("Starting PC-BASIC...");
-        try {
-          const result = await pyodide.runPythonAsync(`
-            import subprocess
-            result = subprocess.run(['pcbasic', '--interactive'], capture_output=True, text=True, input='10 PRINT "HELLO BASIC"\\n20 GOTO 10\\nRUN\\n')
-            result.stdout
-          `);
-          term.writeln(result);
-        } catch (err) {
-          term.writeln("Error: " + err);
-        }
-      } else {
-        term.writeln("Unknown command. Try: runbasic");
-      }
-
-      term.write("$ ");
-    }
+    // Run PC-BASIC in text-only mode
+    await pyodide.runPythonAsync(`
+import sys, pcbasic
+sys.argv = ["pcbasic", "ALLFOOT.BAS", "--text-only"]
+try:
+    pcbasic.main()
+except SystemExit:
+    pass
+`);
+    printToTerm("\\n[PC-BASIC session ended]\\n");
   </script>
 </body>
 </html>
