@@ -3,39 +3,85 @@
 <head>
   <meta charset="utf-8">
   <title>PC-BASIC in Browser</title>
+  <style>
+    body { font-family: monospace; background: #111; color: #0f0; }
+    #terminal { width: 100%; height: 400px; background: #000; color: #0f0;
+                padding: 10px; overflow-y: scroll; }
+    input { width: 100%; background: #222; color: #0f0; border: none; }
+  </style>
 </head>
 <body>
-  <h2>PC-BASIC (Pyodide Demo)</h2>
-  <button id="run">Run BASIC Program</button>
-  <pre id="output"></pre>
+  <h2>PC-BASIC Terminal</h2>
+  <input type="file" id="zipfile" />
+  <div id="terminal"></div>
+  <input id="cmd" placeholder="Type BASIC command here..." />
 
   <script src="https://cdn.jsdelivr.net/pyodide/v0.24.1/full/pyodide.js"></script>
-  <script>
-    async function main() {
-      const pyodide = await loadPyodide();
-      await pyodide.loadPackage("micropip");
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 
-      // install pcbasic from PyPI
+  <script>
+    let pyodide, pcbasicReady = false;
+
+    async function init() {
+      pyodide = await loadPyodide();
+      await pyodide.loadPackage("micropip");
       await pyodide.runPythonAsync(`
           import micropip
           await micropip.install("pcbasic")
       `);
-
-      document.getElementById("run").onclick = async () => {
-        await pyodide.runPythonAsync(`
-            import pcbasic.main
-            pcbasic.main.run([
-                "--run=10 LPRINT 'HELLO WORLD'\\n20 END",
-                "--printer=file:out.txt"
-            ])
-        `);
-
-        // read the LPRINT output
-        const output = pyodide.FS.readFile("out.txt", { encoding: "utf8" });
-        document.getElementById("output").textContent = output;
-      };
+      pcbasicReady = true;
+      log("PC-BASIC ready. Upload your ZIP of BAS files.");
     }
-    main();
+
+    function log(msg) {
+      const term = document.getElementById("terminal");
+      term.textContent += msg + "\n";
+      term.scrollTop = term.scrollHeight;
+    }
+
+    // Mount ZIP into Pyodide FS
+    document.getElementById("zipfile").addEventListener("change", async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const data = await file.arrayBuffer();
+      const zip = await JSZip.loadAsync(data);
+
+      for (const fname of Object.keys(zip.files)) {
+        if (!zip.files[fname].dir) {
+          const content = await zip.files[fname].async("uint8array");
+          pyodide.FS.writeFile(fname, content);
+          log("Loaded: " + fname);
+        }
+      }
+      log("ZIP mounted. Type LOAD \"FILE.BAS\" then RUN.");
+      log("PC-BASIC prompt below:");
+      log("Ok");
+    });
+
+    // Send BASIC command
+    document.getElementById("cmd").addEventListener("keydown", async (e) => {
+      if (e.key === "Enter") {
+        const cmd = e.target.value.trim();
+        e.target.value = "";
+        if (!pcbasicReady) return log("PC-BASIC not ready yet.");
+
+        log("> " + cmd);
+        try {
+          await pyodide.runPythonAsync(`
+              import pcbasic.main
+              pcbasic.main.run(["--command=${cmd}", "--printer=file:out.txt"])
+          `);
+          if (pyodide.FS.analyzePath("out.txt").exists) {
+            const out = pyodide.FS.readFile("out.txt", { encoding: "utf8" });
+            if (out.trim()) log("[LPT OUTPUT]\n" + out);
+          }
+        } catch (err) {
+          log("Error: " + err);
+        }
+      }
+    });
+
+    init();
   </script>
 </body>
 </html>
