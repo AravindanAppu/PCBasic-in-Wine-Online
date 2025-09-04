@@ -4,23 +4,44 @@
   <meta charset="utf-8">
   <title>PC-BASIC in Browser</title>
   <style>
-    body { font-family: monospace; background: #111; color: #0f0; }
-    #terminal { width: 100%; height: 400px; background: #000; color: #0f0;
-                padding: 10px; overflow-y: scroll; }
-    input { width: 100%; background: #222; color: #0f0; border: none; }
+    body { background: #111; color: #0f0; font-family: monospace; }
+    #terminal {
+      width: 100%; height: 400px; background: #000; color: #0f0;
+      padding: 10px; overflow-y: auto; white-space: pre-wrap;
+      border: 2px solid #0f0; border-radius: 4px;
+    }
+    #cmd { width: 100%; background: #111; color: #0f0;
+           border: none; padding: 5px; font-family: monospace; }
+    #printer {
+      margin-top: 10px; background: #222; color: #ff0;
+      padding: 10px; border-radius: 4px;
+      font-family: monospace; white-space: pre-wrap;
+    }
   </style>
 </head>
 <body>
-  <h2>PC-BASIC Terminal</h2>
+  <h2>PC-BASIC in Browser (Pyodide)</h2>
   <input type="file" id="zipfile" />
   <div id="terminal"></div>
   <input id="cmd" placeholder="Type BASIC command here..." />
+  <h3>LPT Output:</h3>
+  <div id="printer">(empty)</div>
 
   <script src="https://cdn.jsdelivr.net/pyodide/v0.24.1/full/pyodide.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 
   <script>
-    let pyodide, pcbasicReady = false;
+    let pyodide, stdinBuffer = [];
+
+    function logTerminal(msg) {
+      const term = document.getElementById("terminal");
+      term.textContent += msg;
+      term.scrollTop = term.scrollHeight;
+    }
+
+    function logPrinter(msg) {
+      document.getElementById("printer").textContent = msg;
+    }
 
     async function init() {
       pyodide = await loadPyodide();
@@ -29,17 +50,23 @@
           import micropip
           await micropip.install("pcbasic")
       `);
-      pcbasicReady = true;
-      log("PC-BASIC ready. Upload your ZIP of BAS files.");
+
+      // Redirect PC-BASIC IO
+      pyodide.setStdout((s) => logTerminal(s));
+      pyodide.setStderr((s) => logTerminal("[ERR] " + s));
+      pyodide.setStdin(() => {
+        return stdinBuffer.length ? stdinBuffer.shift() + "\n" : "";
+      });
+
+      // Run PC-BASIC in background
+      pyodide.runPythonAsync(`
+          import pcbasic.main
+          pcbasic.main.run(["--printer=file:out.txt"])
+      `);
+      logTerminal("PC-BASIC ready. Type commands below.\nOk\n");
     }
 
-    function log(msg) {
-      const term = document.getElementById("terminal");
-      term.textContent += msg + "\n";
-      term.scrollTop = term.scrollHeight;
-    }
-
-    // Mount ZIP into Pyodide FS
+    // Mount uploaded ZIP into FS
     document.getElementById("zipfile").addEventListener("change", async (e) => {
       const file = e.target.files[0];
       if (!file) return;
@@ -50,34 +77,29 @@
         if (!zip.files[fname].dir) {
           const content = await zip.files[fname].async("uint8array");
           pyodide.FS.writeFile(fname, content);
-          log("Loaded: " + fname);
+          logTerminal("Loaded: " + fname + "\n");
         }
       }
-      log("ZIP mounted. Type LOAD \"FILE.BAS\" then RUN.");
-      log("PC-BASIC prompt below:");
-      log("Ok");
+      logTerminal("BAS files mounted. Try: LOAD \"PROGRAM.BAS\"\n");
     });
 
-    // Send BASIC command
-    document.getElementById("cmd").addEventListener("keydown", async (e) => {
+    // Handle user input
+    document.getElementById("cmd").addEventListener("keydown", (e) => {
       if (e.key === "Enter") {
         const cmd = e.target.value.trim();
         e.target.value = "";
-        if (!pcbasicReady) return log("PC-BASIC not ready yet.");
+        stdinBuffer.push(cmd);
+        logTerminal("> " + cmd + "\n");
 
-        log("> " + cmd);
-        try {
-          await pyodide.runPythonAsync(`
-              import pcbasic.main
-              pcbasic.main.run(["--command=${cmd}", "--printer=file:out.txt"])
-          `);
-          if (pyodide.FS.analyzePath("out.txt").exists) {
-            const out = pyodide.FS.readFile("out.txt", { encoding: "utf8" });
-            if (out.trim()) log("[LPT OUTPUT]\n" + out);
-          }
-        } catch (err) {
-          log("Error: " + err);
-        }
+        // Check LPT output
+        setTimeout(() => {
+          try {
+            if (pyodide.FS.analyzePath("out.txt").exists) {
+              const out = pyodide.FS.readFile("out.txt", { encoding: "utf8" });
+              if (out.trim()) logPrinter(out);
+            }
+          } catch {}
+        }, 500);
       }
     });
 
