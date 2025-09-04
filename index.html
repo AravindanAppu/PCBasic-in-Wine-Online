@@ -54,14 +54,16 @@ def js_input(prompt=""):
 builtins.input = js_input
 `);
 
-    input.addEventListener("keydown", e => {
-      if (e.key === "Enter") {
-        const val = input.value;
-        printToTerm(val + "\\n");
-        pyodide.runPython(\`_input_buffer.insert(0, "\${val}")\`);
-        input.value = "";
-      }
-    });
+input.addEventListener("keydown", e => {
+  if (e.key === "Enter") {
+    const val = input.value;
+    printToTerm(val + "\n");
+    const safeVal = val.replace(/"/g, '\\"');   // escape " for Python
+    pyodide.runPython(`_input_buffer.insert(0, "${safeVal}")`);
+    input.value = "";
+  }
+});
+
 
     // Run PC-BASIC in text-only mode
     await pyodide.runPythonAsync(`
