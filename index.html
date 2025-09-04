@@ -1,219 +1,102 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>PC-BASIC in Browser — GitHub-hostable</title>
+  <meta charset="UTF-8" />
+  <title>PC-BASIC in Browser Terminal</title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm/css/xterm.css" />
   <style>
-    body { margin:0; height:100vh; display:flex; flex-direction:column; font-family:system-ui, monospace; }
-    header { padding:10px; background:#0b0f12; color:#fff; display:flex; gap:12px; align-items:center; }
-    main { flex:1; display:flex; gap:12px; padding:12px; background:#071018; }
-    #term-container { flex:1; border-radius:6px; background:#000; overflow:hidden; }
-    #sidebar { width:360px; max-width:40%; display:flex; flex-direction:column; gap:8px; }
-    #controls { background:#071521; padding:10px; border-radius:6px; color:#bfe7d6 }
-    button { padding:8px 10px; border-radius:5px; border:1px solid #144; background:#0b2; color:#012 }
-    input[type=text] { width:100%; padding:6px; border-radius:4px }
-    pre { background:#021; color:#dfd; padding:8px; border-radius:4px; overflow:auto; max-height:240px }
-    a.link { color:#8fe; }
-    footer { padding:8px; font-size:13px; background:#081217; color:#9ab }
+    body, html {
+      height: 100%;
+      margin: 0;
+    }
+    #terminal {
+      height: 100vh;
+      width: 100vw;
+    }
   </style>
 </head>
 <body>
-  <header>
-    <strong>PC-BASIC in Browser (Pyodide + xterm.js)</strong>
-    <div style="margin-left:auto">Host on GitHub Pages — set ZIP_RAW_URL below</div>
-  </header>
+  <div id="terminal"></div>
 
-  <main>
-    <div id="term-container"></div>
-
-    <aside id="sidebar">
-      <div id="controls">
-        <label>ZIP Raw URL (from your repo):</label>
-        <input id="zipUrl" type="text" placeholder="https://raw.githubusercontent.com/you/repo/main/mybas.zip" />
-        <div style="margin-top:8px; display:flex; gap:8px">
-          <button id="loadZip">Load ZIP from Repo</button>
-          <button id="uploadZip">Upload ZIP (local)</button>
-        </div>
-        <div style="margin-top:8px">
-          <input id="fileInput" type="file" accept=".zip" style="display:none" />
-          <small>After mounting, type <code>LOAD "NAME.BAS"</code> and <code>RUN</code> in the terminal.</small>
-        </div>
-      </div>
-
-      <div>
-        <h4 style="margin:6px 0 4px">LPT (Printer) Output</h4>
-        <pre id="printer">(empty)</pre>
-      </div>
-
-      <div>
-        <h4 style="margin:6px 0 4px">Deployment Notes</h4>
-        <pre>1) Put this file as index.html in your repo (main branch).
-2) Upload your zip to the repo (or provide raw URL).
-3) Enable GitHub Pages (branch: main / folder: /)
-4) Visit the Pages URL — pyodide & wasm will load correctly.
-
-CORS: raw.githubusercontent.com is OK for fetching the ZIP.
-</pre>
-      </div>
-    </aside>
-  </main>
-
-  <footer>
-    Uses Pyodide (Pyodide 0.24+), PC-BASIC from PyPI, and xterm.js. All packages loaded from CDNs. Works on GitHub Pages.
-  </footer>
-
+  <!-- xterm.js -->
   <script src="https://cdn.jsdelivr.net/npm/xterm/lib/xterm.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit/lib/xterm-addon-fit.js"></script>
+
+  <!-- Pyodide -->
+  <script src="https://cdn.jsdelivr.net/pyodide/v0.23.4/full/pyodide.js"></script>
 
   <script>
-  // --------- Configuration ----------
-  // If you prefer, set a default ZIP raw URL here (raw.githubusercontent.com)
-  const DEFAULT_ZIP_RAW = ""; // e.g. https://raw.githubusercontent.com/you/repo/main/basfiles.zip
+    const term = new Terminal();
+    const fitAddon = new window.TerminalAddonFit.FitAddon();
+    term.loadAddon(fitAddon);
+    term.open(document.getElementById('terminal'));
+    fitAddon.fit();
 
-  // --------- Terminal Initialization ----------
-  const termContainer = document.getElementById('term-container');
-  const term = new window.Terminal({ cols: 100, rows: 30, convertEol: true });
-  term.open(termContainer);
-  term.writeln('PC-BASIC (Pyodide) — initializing...');
+    let pyodideReady = false;
+    let pyodide;
 
-  // --------- Worker creation ----------
-  // Worker code as a blob so this is a single-file deployable page
-  const workerCode = `
-    importScripts('https://cdn.jsdelivr.net/pyodide/v0.24.1/full/pyodide.js');
+    (async () => {
+      term.writeln("Loading Pyodide...");
+      pyodide = await loadPyodide();
+      await pyodide.loadPackage("micropip");
+      term.writeln("Pyodide loaded.");
 
-    let pyodide = null;
-    let inputQueue = [];
+      // Install PCBASIC via pip
+      term.writeln("Installing PCBASIC...");
+      await pyodide.runPythonAsync(`
+        import micropip
+        await micropip.install("pcbasic")
+        print("PCBASIC installed.")
+      `);
 
-    function send(type, data) {
-      self.postMessage({type, data});
-    }
+      pyodideReady = true;
+      term.writeln("Type 'runbasic' to start PC-BASIC.");
+    })();
 
-    async function initPyodide() {
-      send('log', 'loading Pyodide...');
-      pyodide = await loadPyodide({indexURL: 'https://cdn.jsdelivr.net/pyodide/v0.24.1/full/'});
-      send('log', 'Pyodide loaded');
-      await pyodide.loadPackage('micropip');
-      send('log', 'micropip loaded');
-      await pyodide.runPythonAsync(`import micropip\nawait micropip.install('pcbasic')`);
-      send('log','pcbasic installed');
+    // Handle user input
+    term.onKey((data) => {
+      const input = data.key;
 
-      // redirect IO
-      pyodide.setStdout((s) => send('stdout', s));
-      pyodide.setStderr((s) => send('stderr', s));
-      pyodide.setStdin(() => {
-        if (inputQueue.length === 0) return '';
-        const v = inputQueue.shift();
-        return v + '\n';
-      });
-
-      // run pcbasic in the worker (this blocks the worker but not the page)
-      pyodide.runPythonAsync(`import pcbasic.main\npcbasic.main.run(['--printer=file:out.txt'])`)
-        .then(() => send('log','pcbasic exited'))
-        .catch((e) => send('stderr', String(e)));
-
-      send('ready');
-    }
-
-    self.onmessage = async (ev) => {
-      const {type, data} = ev.data;
-      if (type === 'init') {
-        initPyodide();
-      } else if (type === 'input') {
-        inputQueue.push(data);
-      } else if (type === 'write-file') {
-        // data: {path, bytes}
-        try {
-          pyodide.FS.writeFile(data.path, new Uint8Array(data.bytes));
-          send('log', 'wrote ' + data.path);
-        } catch (e) { send('stderr', 'write-file error ' + e); }
-      } else if (type === 'read-printer') {
-        try {
-          if (pyodide && pyodide.FS.analyzePath('out.txt').exists) {
-            const txt = pyodide.FS.readFile('out.txt', {encoding:'utf8'});
-            send('printer', txt);
-          } else send('printer', '');
-        } catch (e) { send('printer', ''); }
+      if (input === '\r') { // Enter key
+        const line = term._core.buffer.lines.get(term._core.buffer.ybase + term._core.buffer.y).translateToString();
+        handleCommand(line.trim());
+      } else if (input === '\x7F') { // Backspace
+        if (term._core.buffer.x > 0) {
+          term._core.buffer.x--;
+          term._core.buffer.lines.get(term._core.buffer.ybase + term._core.buffer.y).setCell(term._core.buffer.x, { ch: ' ', fg: null, bg: null, chWidth: 1 });
+          term.refresh(term._core.buffer.y, term._core.buffer.y);
+        }
+      } else {
+        term.write(data.key);
       }
-    };
-  `;
+    });
 
-  const blob = new Blob([workerCode], { type: 'application/javascript' });
-  const worker = new Worker(URL.createObjectURL(blob));
+    async function handleCommand(command) {
+      term.writeln(""); // New line
 
-  worker.onmessage = (ev) => {
-    const {type, data} = ev.data;
-    if (type === 'log') term.writeln('[worker] ' + data);
-    else if (type === 'stdout') term.write(data);
-    else if (type === 'stderr') term.writeln('\n[ERR] ' + data);
-    else if (type === 'ready') term.writeln('\nOk\n');
-    else if (type === 'printer') {
-      document.getElementById('printer').textContent = data || '(empty)';
+      if (!pyodideReady) {
+        term.writeln("Still loading... Please wait.");
+        return;
+      }
+
+      if (command === "runbasic") {
+        term.writeln("Starting PC-BASIC...");
+        try {
+          const result = await pyodide.runPythonAsync(`
+            import subprocess
+            result = subprocess.run(['pcbasic', '--interactive'], capture_output=True, text=True, input='10 PRINT "HELLO BASIC"\\n20 GOTO 10\\nRUN\\n')
+            result.stdout
+          `);
+          term.writeln(result);
+        } catch (err) {
+          term.writeln("Error: " + err);
+        }
+      } else {
+        term.writeln("Unknown command. Try: runbasic");
+      }
+
+      term.write("$ ");
     }
-  };
-
-  // init worker
-  worker.postMessage({type:'init'});
-
-  // ---------- Terminal input handling ----------
-  term.onKey(e => {
-    const s = e.key;
-    // send printable characters and Enter/Backspace
-    if (s === '\r') {
-      worker.postMessage({type:'input', data:'\r'});
-      term.write('\r\n');
-      // after a short delay, poll printer file
-      setTimeout(() => worker.postMessage({type:'read-printer'}), 300);
-    } else {
-      worker.postMessage({type:'input', data:s});
-      term.write(s);
-    }
-  });
-
-  // ---------- ZIP loading (from raw URL) ----------
-  document.getElementById('zipUrl').value = DEFAULT_ZIP_RAW;
-  document.getElementById('loadZip').addEventListener('click', async () => {
-    const url = document.getElementById('zipUrl').value.trim();
-    if (!url) { term.writeln('\nEnter raw ZIP URL first'); return; }
-    term.writeln('\nFetching ZIP from: ' + url);
-    try {
-      const resp = await fetch(url);
-      if (!resp.ok) throw new Error('HTTP ' + resp.status);
-      const ab = await resp.arrayBuffer();
-      await mountZip(ab);
-    } catch (e) { term.writeln('\nFetch error: ' + e); }
-  });
-
-  // local upload flow
-  const fileInput = document.getElementById('fileInput');
-  document.getElementById('uploadZip').addEventListener('click', () => fileInput.click());
-  fileInput.addEventListener('change', async (ev) => {
-    const f = ev.target.files[0];
-    if (!f) return;
-    const ab = await f.arrayBuffer();
-    await mountZip(ab);
-  });
-
-  async function mountZip(arrayBuffer) {
-    term.writeln('Unzipping...');
-    const zip = await JSZip.loadAsync(arrayBuffer);
-    const files = Object.keys(zip.files);
-    term.writeln('Found ' + files.length + ' entries');
-    for (const name of files) {
-      const entry = zip.files[name];
-      if (entry.dir) continue;
-      const data = await entry.async('uint8array');
-      // send to worker to write into pyodide FS
-      worker.postMessage({type:'write-file', data:{path:name, bytes:data.buffer}}, [data.buffer]);
-      term.writeln(' -> ' + name);
-    }
-    term.writeln('\nMounted ZIP. In the terminal type: LOAD "MYPROG.BAS" and RUN');
-  }
-
-  // poll printer button (not shown) - but also available via Enter
-  setInterval(() => worker.postMessage({type:'read-printer'}), 2000);
-
   </script>
 </body>
 </html>
