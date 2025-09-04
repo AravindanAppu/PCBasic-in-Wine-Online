@@ -1,48 +1,181 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>GWBASIC in DOSBox-X</title>
-  <script src="https://unpkg.com/dosbox-x@latest/dist/dosbox-x.min.js"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>GW-BASIC via DOSBox-Worker</title>
+  <style>
+    body {
+      font-family: 'Courier New', monospace;
+      background: #000;
+      color: #0f0;
+      text-align: center;
+      padding: 10px;
+    }
+    #screen {
+      border: 1px solid #0f0;
+      margin: 20px auto;
+      width: 800px;
+      height: 600px;
+      background: black;
+      position: relative;
+    }
+    #screen > canvas {
+      width: 100%;
+      height: 100%;
+    }
+    button {
+      background: #008000;
+      color: white;
+      border: none;
+      padding: 12px 20px;
+      margin: 5px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #006000;
+    }
+    .info {
+      max-width: 800px;
+      margin: 20px auto;
+      font-size: 14px;
+      line-height: 1.6;
+      text-align: left;
+      color: #ccc;
+    }
+  </style>
 </head>
 <body>
-  <div id="dosbox-container" style="width:800px; height:600px;"></div>
-  <input type="file" id="zipInput" accept=".zip" />
 
-  <script>
-    document.getElementById('zipInput').addEventListener('change', function(event) {
-      const file = event.target.files[0];
-      if (!file) return;
+  <h1>🟢 GW-BASIC in Browser (via dosbox-worker)</h1>
+  <div id="screen"><canvas></canvas></div>
 
-      const reader = new FileReader();
-      reader.onload = function(e) {
-        const arrayBuffer = e.target.result;
+  <button id="loadZip">📁 Load ZIP with GWBASIC</button>
+  <button id="runBasic" disabled>▶️ Run GW-BASIC</button>
 
-        // Initialize DOSBox-X
-        const dosbox = new Dosbox({
-          id: "dosbox-container",
-          onload: async function(dosbox) {
-            // Mount the ZIP file as drive C
-            await dosbox.mount({
-              mountpoint: "c",
-              type: "zip",
-              data: arrayBuffer
-            });
+  <div class="info">
+    <p><strong>Instructions:</strong></p>
+    <ol>
+      <li>Select a ZIP file containing <code>GWBASIC.EXE</code> and your <code>.BAS</code> programs.</li>
+      <li>Click "Run GW-BASIC" to start DOSBox-X in a Web Worker.</li>
+      <li>Any <code>LPRINT</code> output will be captured and downloaded as <code>lprint_output.txt</code>.</li>
+    </ol>
+    <p><strong>Note:</strong> Runs entirely in-browser using WebAssembly and Web Workers.</p>
+  </div>
 
-            // Switch to C: and run GWBASIC
-            dosbox.run("c:");
-            dosbox.run("GWBASIC.EXE");
+  <!-- Load dosbox-worker from CDN -->
+  <script type="module">
+    import { dosboxWorker } from 'https://cdn.jsdelivr.net/npm/@emulators/dosbox-worker@latest/dist/index.js';
 
-            // You can also auto-load a BAS file inside BASIC with:
-            // dosbox.run("LOAD \"YOUR_FILE.BAS\"");
+    let emulator = null;
+    let bundle = null;
+    let lprintOutput = "";
+
+    // Step 1: Load ZIP file
+    document.getElementById("loadZip").addEventListener("click", () => {
+      const input = document.createElement("input");
+      input.type = "file";
+      input.accept = ".zip";
+      input.onchange = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const arrayBuffer = await file.arrayBuffer();
+        bundle = {
+          c: new Uint8Array(arrayBuffer)  // Mount as C: drive
+        };
+        alert(`✅ ${file.name} loaded. Ready to run.`);
+        document.getElementById("runBasic").disabled = false;
+      };
+      input.click();
+    });
+
+    // Step 2: Run DOSBox-X via Worker
+    document.getElementById("runBasic").addEventListener("click", async () => {
+      if (!bundle) return alert("No bundle data!");
+
+      try {
+        // Start DOSBox-X worker
+        emulator = await dosboxWorker({
+          wasmUrl: "https://cdn.jsdelivr.net/npm/@emulators/dosbox-x@latest/dist/dosbox-x-vanilla-sdl.wasm",
+          canvas: document.querySelector("#screen canvas"),
+          bundle,
+          stdout: (text) => {
+            console.log("STDOUT:", text);
+          },
+          stderr: (text) => {
+            console.error("STDERR:", text);
+          },
+          read: (filename) => {
+            // Optional: intercept file reads
+          },
+          write: async (filename, data) => {
+            // Capture writes to LPT1
+            if (filename.toUpperCase() === "LPT1") {
+              const content = new TextDecoder().decode(data).replace(/\x1A/g, '');
+              lprintOutput += content;
+              downloadString(lprintOutput, "lprint_output.txt");
+            }
           }
         });
 
-        dosbox.start();
-      };
+        // Send commands after boot
+        await sleep(2000);
+        await sendCmd("mount lpt1 lpt1.txt");
+        await sendCmd("lpt1:");
+        await sendCmd("C:");
+        await sendCmd("cd \\");
+        await sendCmd("GWBASIC.EXE");
 
-      reader.readAsArrayBuffer(file);
+      } catch (err) {
+        alert("Error starting DOSBox: " + err.message);
+        console.error(err);
+      }
     });
+
+    // Helper: Send command to DOS
+    async function sendCmd(cmd) {
+      await emulator.sendInput(cmd + "\n");
+      await sleep(500); // Wait for execution
+    }
+
+    // Helper: Sleep
+    function sleep(ms) {
+      return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    // Helper: Download string as file
+    function downloadString(content, filename) {
+      const blob = new Blob([content], { type: "text/plain" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    // Optional: Periodic LPT1 check
+    setInterval(async () => {
+      if (emulator && lprintOutput.length < 5e6) { // Max 5MB
+        try {
+          const stat = await emulator.stat("LPT1");
+          if (stat && stat.size > 0) {
+            const data = await emulator.readFile("LPT1");
+            const content = new TextDecoder().decode(data).replace(/\x1A/g, '');
+            lprintOutput += content;
+            downloadString(lprintOutput, "lprint_auto_" + timestamp() + ".txt");
+            await emulator.writeFile("LPT1", ""); // Clear
+          }
+        } catch (e) { /* ignore */ }
+      }
+    }, 5000);
+
+    function timestamp() {
+      return new Date().toISOString().slice(0, 19).replace(/:/g, "-");
+    }
   </script>
+
 </body>
 </html>
