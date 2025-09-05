@@ -22,7 +22,7 @@
         console.log("DOSBox-X runtime ready");
 
         // 1. Fetch gwbasic.zip
-        const resp = await fetch("gwbasic.zip");
+        const resp = await fetch("basic.zip");
         const buf  = await resp.arrayBuffer();
         const data = new Uint8Array(buf);
 
@@ -49,3 +49,4 @@
   <script src="./main.js"></script>
 </body>
 </html>
+
