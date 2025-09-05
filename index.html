@@ -17,7 +17,7 @@
   <div id="container">
     <header>
       <h2 style="margin:0">GW-BASIC in DosWasmX</h2>
-      <div style="font-size:12px;opacity:0.8">Auto-mounts <code>gwbasic.zip</code> (put it next to index.html)</div>
+      <div style="font-size:12px;opacity:0.8">Auto-mounts <code>basic.zip</code> (put it next to index.html)</div>
     </header>
 
     <div id="emu">
@@ -46,20 +46,21 @@
       });
     }
 
-    // Auto-load the gwbasic.zip listed in romlist.js (key: "gwbasic")
+    // Auto-load the basic.zip listed in romlist.js (key: "basic")
     (async () => {
       try {
         const app = await whenMyAppReady();
         // loadRom accepts either URL or a key from romlist — we use actual filename
-        console.log("myApp ready; auto-loading gwbasic.zip");
+        console.log("myApp ready; auto-loading basic.zip");
         // Ensure canvas id used by Module matches: DosWasmX's main.js usually replaces/uses canvas id
         // Ask myApp to load the zip that's hosted next to index.html
         await app.loadRom("basic.zip");
         // if your build supports autoStart param, it will boot automatically after loadRom
       } catch (err) {
-        console.error("Failed to auto-load gwbasic.zip:", err);
+        console.error("Failed to auto-load basic.zip:", err);
       }
     })();
   </script>
 </body>
 </html>
+
