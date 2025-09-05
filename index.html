@@ -1,26 +1,47 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="UTF-8">
-  <title>GW-BASIC in DosWasmX</title>
+  <meta charset="utf-8">
+  <title>DOSBox-X WASM + GW-BASIC</title>
   <style>
-    body { margin:0; background:#000; color:#fff; }
-    #canvas { width:800px; height:600px; display:block; margin:20px auto; border:2px solid #444; }
+    body { margin:0; background:#000; color:#fff; text-align:center; }
+    canvas { width:800px; height:600px; border:2px solid #444; margin:20px auto; display:block; }
   </style>
 </head>
 <body>
-  <h2 style="text-align:center">GW-BASIC in DosWasmX</h2>
-  <canvas id="canvas"></canvas>
-
-  <script src="main.js"></script>
-  <script src="romlist.js"></script>
-  <script src="settings.js"></script>
+  <h2>DOSBox-X WASM (GW-BASIC Auto-Boot)</h2>
+  <canvas id="dosbox"></canvas>
 
   <script>
-    // Auto-load gwbasic.zip when emulator is ready
-    window.onload = () => {
-      myApp.loadRom("basic.zip");   // mount your bundled ZIP
+    var Module = {
+      canvas: document.getElementById("dosbox"),
+      print: (t)=>console.log("[stdout]", t),
+      printErr: (t)=>console.error("[stderr]", t),
+      onRuntimeInitialized: async function() {
+        console.log("DOSBox-X runtime ready");
+
+        // Fetch gwbasic.zip hosted with index.html
+        const resp = await fetch("gwbasic.zip");
+        const buf  = await resp.arrayBuffer();
+        const data = new Uint8Array(buf);
+
+        // Write ZIP into FS
+        FS.writeFile("/basic.zip", data);
+
+        // Example: just list it and boot into DOS
+        Module.callMain([
+          "-c", "mount z .",
+          "-c", "z:",
+          "-c", "dir"
+          // If you unzip files manually to /gwbasic, then:
+          // "-c", "mount c /gwbasic",
+          // "-c", "c:",
+          // "-c", "gwbasic.exe"
+        ]);
+      }
     };
   </script>
+
+  <script src="main.js"></script>
 </body>
 </html>
