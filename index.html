@@ -3,25 +3,93 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>DOSBox-X WASM Minimal</title>
+<title>PC-BASIC in DOSBox-X WASM</title>
 <style>
-    body { margin:0; padding:0; background:#000; display:flex; justify-content:center; align-items:center; height:100vh; }
-    #dosbox-container { width: 800px; height: 600px; border:2px solid #333; }
+    body {
+        margin: 0;
+        padding: 0;
+        background: #000;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-start;
+        height: 100vh;
+        color: #fff;
+        font-family: monospace;
+    }
+    #dosbox-container {
+        width: 800px;
+        height: 600px;
+        border: 2px solid #444;
+        margin-top: 10px;
+        background: #000;
+    }
+    #drop-area {
+        margin-top: 10px;
+        padding: 10px;
+        border: 2px dashed #666;
+        width: 400px;
+        text-align: center;
+        cursor: pointer;
+    }
 </style>
 </head>
 <body>
+<h1>PC-BASIC in DOSBox-X WASM</h1>
+<div id="drop-area">Drag & Drop PCBASIC ZIP here or click to load</div>
 <div id="dosbox-container"></div>
 
 <script src="https://rawcdn.githack.com/nbarkhina/DosWasmX/master/dist/main.js"></script>
 <script>
-    // wait for DosWasmX to load
-    const app = new DosWasmX.DosWasmX({
+let app;
+
+// Initialize DosWasmX
+function startDosBox(zipFile) {
+    if(app) {
+        app.stop(); // stop previous instance if any
+    }
+
+    app = new DosWasmX.DosWasmX({
         canvas: document.getElementById('dosbox-container'),
-        memorySizeMB: 64,
-        rom: null // or provide a default DOS image
+        memorySizeMB: 64
     });
 
-    app.start();
+    app.start().then(() => {
+        if(zipFile) {
+            app.loadRom(zipFile).then(() => {
+                console.log("PC-BASIC loaded");
+            });
+        }
+    });
+}
+
+// Drag-and-drop
+const dropArea = document.getElementById('drop-area');
+dropArea.addEventListener('dragover', e => { e.preventDefault(); dropArea.style.borderColor = '#fff'; });
+dropArea.addEventListener('dragleave', e => { e.preventDefault(); dropArea.style.borderColor = '#666'; });
+dropArea.addEventListener('drop', e => {
+    e.preventDefault();
+    dropArea.style.borderColor = '#666';
+    if(e.dataTransfer.files.length > 0){
+        const file = e.dataTransfer.files[0];
+        startDosBox(file);
+    }
+});
+
+// Click to open file dialog
+dropArea.addEventListener('click', () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.zip';
+    input.onchange = e => {
+        const file = e.target.files[0];
+        startDosBox(file);
+    };
+    input.click();
+});
+
+// Optional: start with preloaded PCBASIC ZIP hosted somewhere
+// startDosBox("https://example.com/pcbassic.zip");
 </script>
 </body>
 </html>
