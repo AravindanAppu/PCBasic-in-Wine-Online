@@ -1,38 +1,37 @@
-<!DOCTYPE html>
-<html>
+<!doctype html>
+<html lang="en">
+
 <head>
   <meta charset="utf-8">
-  <title>FreeDOS in Browser (v86)</title>
-  <script src="https://copy.sh/v86/build/libv86.js"></script>
+  <title>MS-DOS Online</title>
+  <script src="js-dos-6.22.js"></script>
   <style>
-    body { background:#111; color:#eee; text-align:center; margin:0; font-family:monospace; }
-    h2 { margin:10px; }
-    #screen_container { width:800px; height:600px; border:2px solid #444; margin:10px auto; }
-    canvas { width:100%; height:100%; }
+    body {
+      background-color: #426;
+      padding: 0;
+      margin: 0;
+    }
+    canvas {
+      width: 640px;
+      height: 400px;
+    }
+    div {
+      width: 640px;
+      height: 400px;
+      margin: auto auto;
+    }
   </style>
 </head>
+
 <body>
-  <h2>FreeDOS running inside v86 (WASM)</h2>
-  <!-- ✅ must be a DIV, v86 inserts its own <canvas> -->
-  <div id="screen_container"></div>
-
+  <div><canvas id="jsdos"></canvas></div>
   <script>
-    window.onload = function() {
-      var emulator = new V86({
-        wasm_path: "v86.wasm",
-        memory_size: 64 * 1024 * 1024,
-        vga_memory_size: 2 * 1024 * 1024,
-
-        // ✅ pass the DIV, not a canvas
-        screen_container: document.getElementById("screen_container"),
-
-        bios: { url: "https://copy.sh/v86/bios/seabios.bin" },
-        vga_bios: { url: "https://copy.sh/v86/bios/vgabios.bin" },
-
-        hda: { url: "https://copy.sh/v86/images/freedos722.img" },
-        autostart: true,
-      });
-    };
+    Dos(document.getElementById("Dosbox-x"), { 
+        wdosboxUrl: "main.js" 
+    }).ready((fs, main) => {
+        main()
+    });
   </script>
 </body>
+
 </html>
