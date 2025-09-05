@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>DosWasmX Test</title>
+  <title>DOSBox-X WASM</title>
   <style>
     body { margin:0; background:#000; }
     canvas { width:100vw; height:100vh; display:block; }
@@ -11,18 +11,18 @@
 <body>
   <canvas id="dosbox"></canvas>
 
-  <script type="module">
-    import { DosWasmX } from "./main.js";  // adjust path to your copy
-
-    const app = new DosWasmX({
+  <!-- Load the Emscripten runtime -->
+  <script>
+    var Module = {
       canvas: document.getElementById("dosbox"),
-      memorySizeMB: 64
-    });
-
-    app.start().then(() => {
-      console.log("DosWasmX started!");
-    });
+      onRuntimeInitialized: function() {
+        console.log("DOSBox-X WASM runtime ready");
+        // You can now run autoexec commands or call Module.callMain([...])
+      }
+    };
   </script>
+
+  <!-- This must be served from the same directory as main.wasm -->
+  <script src="./main.js"></script>
 </body>
 </html>
-
