@@ -2,28 +2,36 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>MS-DOS in Browser</title>
+  <title>FreeDOS in Browser (v86)</title>
   <script src="https://copy.sh/v86/build/libv86.js"></script>
   <style>
-    #screen { width:800px; height:600px; border:2px solid black; }
+    body { background:#111; color:#eee; text-align:center; margin:0; font-family:monospace; }
+    h2 { margin:10px; }
+    #screen { width:800px; height:600px; border:2px solid #444; display:block; margin:10px auto; }
   </style>
 </head>
 <body>
-  <h3>MS-DOS 6.22 in Browser</h3>
+  <h2>FreeDOS running inside v86 (WASM)</h2>
   <canvas id="screen"></canvas>
 
   <script>
-    var emulator = new V86({
-      wasm_path: "v86.wasm",
-      memory_size: 64 * 1024 * 1024,
-      vga_memory_size: 2 * 1024 * 1024,
-      screen_container: document.getElementById("screen"),
-      bios: { url: "https://copy.sh/v86/bios/seabios.bin" },
-      vga_bios: { url: "https://copy.sh/v86/bios/vgabios.bin" },
-      hda: { url: "https://archive.org/download/ms-dos-6.22_dvd/MS-DOS%206.22.iso" }, // supply your MS-DOS image
-      autostart: true,
-    });
+    window.onload = function() {
+      var emulator = new V86({
+        wasm_path: "v86.wasm",
+        memory_size: 64 * 1024 * 1024,
+        vga_memory_size: 2 * 1024 * 1024,
+        screen_container: document.getElementById("screen"),
+
+        // BIOS binaries from v86 repo
+        bios: { url: "https://copy.sh/v86/bios/seabios.bin" },
+        vga_bios: { url: "https://copy.sh/v86/bios/vgabios.bin" },
+
+        // ✅ A ready FreeDOS image hosted by copy.sh
+        hda: { url: "https://copy.sh/v86/images/freedos722.img" },
+
+        autostart: true,
+      });
+    };
   </script>
 </body>
 </html>
-
