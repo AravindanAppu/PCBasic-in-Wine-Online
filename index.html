@@ -1,47 +1,26 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="utf-8">
-  <title>DOSBox-X WASM + GW-BASIC</title>
+  <meta charset="UTF-8">
+  <title>GW-BASIC in DosWasmX</title>
   <style>
-    body { margin:0; background:#111; color:#eee; text-align:center; }
-    canvas { width:800px; height:600px; border:2px solid #444; margin:20px auto; display:block; }
+    body { margin:0; background:#000; color:#fff; }
+    #canvas { width:800px; height:600px; display:block; margin:20px auto; border:2px solid #444; }
   </style>
 </head>
 <body>
-  <h2>DOSBox-X WASM (GW-BASIC Auto-Boot)</h2>
-  <canvas id="dosbox"></canvas>
+  <h2 style="text-align:center">GW-BASIC in DosWasmX</h2>
+  <canvas id="canvas"></canvas>
+
+  <script src="main.js"></script>
+  <script src="romlist.js"></script>
+  <script src="settings.js"></script>
 
   <script>
-    var Module = {
-      canvas: document.getElementById("dosbox"),
-      print: (t)=>console.log("[stdout]", t),
-      printErr: (t)=>console.error("[stderr]", t),
-      onRuntimeInitialized: async function() {
-        console.log("DOSBox-X runtime ready");
-
-        // Fetch gwbasic.zip hosted alongside index.html
-        const resp = await fetch("basic.zip");
-        const buf  = await resp.arrayBuffer();
-        const data = new Uint8Array(buf);
-
-        // Write zip file into Emscripten filesystem
-        FS.writeFile("/basic.zip", data);
-
-        // Mount ZIP as drive C:
-        Module.callMain([
-          "-c", "mount z .",
-          "-c", "z:",
-          "-c", "imgmount c /basic.zip -t iso",
-          "-c", "c:",
-          "-c", "dir",
-          "-c", "gwbasic.exe"
-        ]);
-      }
+    // Auto-load gwbasic.zip when emulator is ready
+    window.onload = () => {
+      myApp.loadRom("basic.zip");   // mount your bundled ZIP
     };
   </script>
-
-  <!-- Load your wasm/JS build -->
-  <script src="./main.js"></script>
 </body>
 </html>
