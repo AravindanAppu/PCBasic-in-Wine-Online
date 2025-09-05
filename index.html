@@ -1,66 +1,28 @@
-<!doctype html>
-<html lang="en">
+<!DOCTYPE html>
+<html>
 <head>
-  <meta charset="utf-8" />
-  <title>GW-BASIC — DosWasmX</title>
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta charset="utf-8">
+  <title>MS-DOS in Browser</title>
+  <script src="https://copy.sh/v86/build/libv86.js"></script>
   <style>
-    html,body { height:100%; margin:0; background:#000; color:#fff; font-family:Arial,Helvetica,sans-serif; }
-    #container { display:flex; flex-direction:column; height:100%; }
-    header { padding:8px; text-align:center; background:#111; color:#fff; }
-    #emu { flex:1; display:flex; align-items:center; justify-content:center; }
-    #canvasWrap { width: 100%; height:100%; min-height:360px; display:flex; align-items:center; justify-content:center; }
-    canvas { width:100%; height:100%; display:block; background:#000; }
+    #screen { width:800px; height:600px; border:2px solid black; }
   </style>
 </head>
 <body>
-  <div id="container">
-    <header>
-      <h2 style="margin:0">GW-BASIC in DosWasmX</h2>
-      <div style="font-size:12px;opacity:0.8">Auto-mounts <code>basic.zip</code> (put it next to index.html)</div>
-    </header>
-
-    <div id="emu">
-      <div id="canvasWrap">
-        <!-- DosWasmX will place its canvas here -->
-        <canvas id="canvas"></canvas>
-      </div>
-    </div>
-  </div>
-
-  <!-- DosWasmX expects settings.js & romlist.js to be present -->
-  <script src="main.js"></script>
-  <script src="settings.js"></script>
-  <script src="romlist.js"></script>
+  <h3>MS-DOS 6.22 in Browser</h3>
+  <canvas id="screen"></canvas>
 
   <script>
-    // Some doswasmx builds delay myApp creation; wait until it exists
-    function whenMyAppReady(timeout = 15000) {
-      const start = Date.now();
-      return new Promise((resolve, reject) => {
-        (function poll() {
-          if (window.myApp && typeof window.myApp.loadRom === "function") return resolve(window.myApp);
-          if (Date.now() - start > timeout) return reject(new Error("myApp not available in time"));
-          setTimeout(poll, 100);
-        })();
-      });
-    }
-
-    // Auto-load the basic.zip listed in romlist.js (key: "basic")
-    (async () => {
-      try {
-        const app = await whenMyAppReady();
-        // loadRom accepts either URL or a key from romlist — we use actual filename
-        console.log("myApp ready; auto-loading basic.zip");
-        // Ensure canvas id used by Module matches: DosWasmX's main.js usually replaces/uses canvas id
-        // Ask myApp to load the zip that's hosted next to index.html
-        await app.loadRom("basic.zip");
-        // if your build supports autoStart param, it will boot automatically after loadRom
-      } catch (err) {
-        console.error("Failed to auto-load basic.zip:", err);
-      }
-    })();
+    var emulator = new V86({
+      wasm_path: "https://copy.sh/v86/build/v86.wasm",
+      memory_size: 64 * 1024 * 1024,
+      vga_memory_size: 2 * 1024 * 1024,
+      screen_container: document.getElementById("screen"),
+      bios: { url: "https://copy.sh/v86/bios/seabios.bin" },
+      vga_bios: { url: "https://copy.sh/v86/bios/vgabios.bin" },
+      hda: { url: "https://archive.org/download/ms-dos-6.22_dvd/MS-DOS%206.22.iso" }, // supply your MS-DOS image
+      autostart: true,
+    });
   </script>
 </body>
 </html>
-
