@@ -12,7 +12,6 @@
   <h2>DOSBox-X WASM (GW-BASIC Auto-Boot)</h2>
   <canvas id="dosbox"></canvas>
 
-  <!-- Emscripten runtime options -->
   <script>
     var Module = {
       canvas: document.getElementById("dosbox"),
@@ -21,32 +20,28 @@
       onRuntimeInitialized: async function() {
         console.log("DOSBox-X runtime ready");
 
-        // 1. Fetch gwbasic.zip
+        // Fetch gwbasic.zip hosted alongside index.html
         const resp = await fetch("basic.zip");
         const buf  = await resp.arrayBuffer();
         const data = new Uint8Array(buf);
 
-        // 2. Write zip to FS
+        // Write zip file into Emscripten filesystem
         FS.writeFile("/basic.zip", data);
-        console.log("basic.zip loaded into FS");
 
-        // 3. Unzip contents into /gwbasic
-        // Use Emscripten’s built-in zip.js (if included) or a tiny JS unzip library.
-        // For simplicity, we call unzip via p7zip-like DOSBox-X command:
+        // Mount ZIP as drive C:
         Module.callMain([
           "-c", "mount z .",
           "-c", "z:",
-          "-c", "unzip basic.zip /basic",
-          "-c", "mount c /basic",
+          "-c", "imgmount c /basic.zip -t iso",
           "-c", "c:",
+          "-c", "dir",
           "-c", "gwbasic.exe"
         ]);
       }
     };
   </script>
 
-  <!-- Load your WASM/JS build -->
+  <!-- Load your wasm/JS build -->
   <script src="./main.js"></script>
 </body>
 </html>
-
