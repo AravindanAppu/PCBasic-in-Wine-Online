@@ -1,56 +1,27 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DOSBox WASM Example</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            background-color: #f0f0f0;
-        }
-        #dosbox-container {
-            width: 800px;
-            height: 600px;
-            border: 2px solid #333;
-            background-color: #000;
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DOSBox-X WASM Minimal</title>
+<style>
+    body { margin:0; padding:0; background:#000; display:flex; justify-content:center; align-items:center; height:100vh; }
+    #dosbox-container { width: 800px; height: 600px; border:2px solid #333; }
+</style>
 </head>
 <body>
-    <div id="dosbox-container"></div>
+<div id="dosbox-container"></div>
 
-    <script src="https://github.com/nbarkhina/DosWasmX/blob/master/dist/main.js"></script>
-    <script>
-        // Initialize DOSBox
-        const dosbox = new Dosbox({
-            id: "dosbox-container",
-            onload: function () {
-                // Optional: Load a DOS game or program here
-                dosbox.run("example-game.exe", [
-                    "-c", "mount c .",
-                    "-c", "c:",
-                    "-c", "example-game.exe"
-                ]);
-            }
-        });
+<script src="https://rawcdn.githack.com/nbarkhina/DosWasmX/master/dist/main.js"></script>
+<script>
+    // wait for DosWasmX to load
+    const app = new DosWasmX.DosWasmX({
+        canvas: document.getElementById('dosbox-container'),
+        memorySizeMB: 64,
+        rom: null // or provide a default DOS image
+    });
 
-        // Optional: Configure DOSBox settings
-        dosbox.config({
-            autolock: true,
-            cycles: "max",
-            machine: "svga",
-            memorysize: "16"
-        });
-
-        // Start DOSBox
-        dosbox.start();
-    </script>
+    app.start();
+</script>
 </body>
 </html>
