@@ -33,9 +33,6 @@
             // Start DOSBox-X with the provided bundle
             const ci = await emulators.dosboxXWorker(bundle);
 
-            // Attach the emulator's default UI to the page
-            emulatorsUi.canvas(ci, document.getElementById("root"));
-
             console.log("DOSBox-X is running!");
         } catch (err) {
             console.error("Error:", err);
@@ -45,6 +42,7 @@
     </script>
 </body>
 </html>
+
 
 
 
