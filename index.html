@@ -18,11 +18,17 @@
         <div id="jsdos" />
         <script>
         emulators.pathPrefix = "https://v8.js-dos.com/v7/emulators/";
-        const bundle = await fetch("./basic.jsdos");
-        const ci = await emulators.dosWorker(new Uint8Array(await bundle.arrayBuffer()));
+
+        async function rungwbasic() {
+            stop();
+            const bundle = await fetch("./basic.jsdos");
+            const ci = await emulators.dosWorker(new Uint8Array(await bundle.arrayBuffer()));
+        }
+        rungwbasic()    
         </script>
     </body>
 </html>
+
 
 
 
