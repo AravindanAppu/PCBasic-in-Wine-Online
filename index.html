@@ -4,9 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>GW-BASIC Emulator</title>
-    <script src="https://v8.js-dos.com/v7/emulators/emulators.js"></script>
-    <script src="https://v8.js-dos.com/v7/emulators-ui/emulators-ui.js"></script>
-    <script src="https://v8.js-dos.com/v7/emulators-ui/emulators-ui.css"></script>
+    <script src="https://v8.js-dos.com/latest/emulators/emulators.js"></script>
     <style>
         html, body, #root {
             width: 100%;
@@ -23,7 +21,7 @@
 
     <script>
     (async () => {
-        emulators.pathPrefix = "https://v8.js-dos.com/v7/emulators/";
+        emulators.pathPrefix = "https://v8.js-dos.com/latest/emulators/";
 
         try {
             // Fetch the .jsdos file containing gwbasic.exe and related files
@@ -47,5 +45,6 @@
     </script>
 </body>
 </html>
+
 
 
