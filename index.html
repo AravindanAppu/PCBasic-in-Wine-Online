@@ -17,7 +17,7 @@
     emulators.pathPrefix = "https://v8.js-dos.com/v7/emulators/";
 
     // load your plain ZIP (not .jsdos bundle)
-    const resp = await fetch("basic.zip");
+    const resp = await fetch("./basic.zip");
     const ab = await resp.arrayBuffer();
 
     // wrap into a bundle object DOSBox-X understands
@@ -46,3 +46,4 @@
   </script>
 </body>
 </html>
+
