@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>Digger Example</title>
+    <title>GWBasic in DOSBOX-X</title>
     <script src="https://v8.js-dos.com/latest/emulators/emulators.js"></script>
     <style>
         html, body, #root {
@@ -21,16 +21,19 @@
     <script type="module">
 
         emulators.pathPrefix = "https://v8.js-dos.com/latest/emulators/";
+        const zipUrl = "./basic.zip";
+        const response = await fetch(zipUrl);
+        if (!response.ok) throw new Error("Failed to fetch ZIP: " + response.status);
+        const arrayBuffer = await response.arrayBuffer();
+        const bundle = {
+                type: "zip",
+                name: "basic.zip",
+                data: arrayBuffer
+            };
+        const ci = await emulators.dosboxXWorker(bundle);
 
-        async function runDigger() {
-            stop();
-
-            const bundle = await fetch("https://v8.js-dos.com/bundles/digger.jsdos");
-            const ci = await emulators.dosboxXWorker(new Uint8Array(await bundle.arrayBuffer()));
-
-        }
-
-        runDigger();
+        emulatorsUi.canvas(ci, document.getElementById("dos"));
     </script>
 </body>
 </html>
+
