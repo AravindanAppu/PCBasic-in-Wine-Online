@@ -1,44 +1,85 @@
 <!doctype html>
 <html>
 <head>
-  <meta charset="utf-8" />
-  <title>GW-BASIC in DOSBox-X (js-dos v8)</title>
-  <style>
-    html, body, #dos { height: 100%; margin: 0; }
-  </style>
-  <!-- js-dos v7 emulators -->
-<script src="https://v8.js-dos.com/v7/emulators/emulators.js"></script>
-<script src="https://v8.js-dos.com/v7/emulators-ui/emulators-ui.js"></script>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Digger Example</title>
+    <script src="https://v8.js-dos.com/latest/emulators/emulators.js"></script>
+    <style>
+        html, body, #root {
+            width: 100%;
+            height: 100%;
+            padding: 0;
+            margin: 0;
+            overflow: hidden;
+        }
+    </style>
 </head>
+
 <body>
-  <div id="dos"></div>
-  <script type="module">
-    emulators.pathPrefix = "https://v8.js-dos.com/v7/emulators/";
+<div id="root">
+</div>
+<script type="module">
+    import * as THREE from 'https://unpkg.com/three@latest/build/three.module.js';
+    emulators.pathPrefix = "https://v8.js-dos.com/latest/emulators/";
 
-    // load your plain ZIP (not .jsdos bundle)
-    const resp = await fetch("./basic.zip");
-    const ab = await resp.arrayBuffer();
+    const img = document.createElement("canvas");
+    img.width = 320;
+    img.height = 200;
 
-    // wrap into a bundle object DOSBox-X understands
-    const bundle = {
-      type: "zip",
-      name: "basic.zip",
-      data: ab
+    const ctx = img.getContext('2d');
+    const texture = new THREE.CanvasTexture(img);
+
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color();
+
+    const camera = new THREE.PerspectiveCamera( 75, window.innerWidth/window.innerHeight, 0.1, 1000 );
+    const renderer = new THREE.WebGLRenderer();
+    renderer.setSize( window.innerWidth, window.innerHeight );
+
+    document.getElementById("root").appendChild(renderer.domElement);
+
+    const geometry = new THREE.BoxGeometry();
+    const material = new THREE.MeshBasicMaterial({
+        map: texture,
+    });
+    const cube = new THREE.Mesh( geometry, material );
+    scene.add( cube );
+
+    camera.position.z = 2;
+
+    const animate = function () {
+            requestAnimationFrame( animate );
+
+            cube.rotation.x += 0.01;
+            cube.rotation.y += 0.01;
+
+            renderer.render( scene, camera );
     };
 
-    // start DOSBox-X worker
-    const ci = await emulators.dosboxXWorker(bundle);
+    animate();
 
-    // now we can send DOS commands directly
-    // mount the extracted files as drive D:
-    await ci.send("mount d .\r");
-    await ci.send("d:\r");
-    await ci.send("gwbasic\r");
-    
-  </script>
+    async function runDigger() {
+        stop();
+
+        const bundle = await fetch("https://v8.js-dos.com/bundles/digger.jsdos");
+        const ci = await emulators.dosWorker(new Uint8Array(await bundle.arrayBuffer()));
+        const rgba = new Uint8ClampedArray(320 * 200 * 4);
+
+        ci.events().onFrame((rgb, _rgba) => {
+            for (let next = 0; next < 320 * 200; ++next) {
+                 rgba[next * 4 + 0] = rgb[next * 3 + 0];
+                 rgba[next * 4 + 1] = rgb[next * 3 + 1];
+                 rgba[next * 4 + 2] = rgb[next * 3 + 2];
+                 rgba[next * 4 + 3] = 255;
+            }
+
+            ctx?.putImageData(new ImageData(rgba, 320, 200), 0, 0);
+            texture.needsUpdate = true;
+        });
+    }
+
+    runDigger();
+</script>
 </body>
 </html>
-
-
-
-
