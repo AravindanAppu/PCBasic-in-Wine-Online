@@ -1,38 +1,46 @@
 <!doctype html>
-<html lang="en">
-
+<html>
 <head>
-  <meta charset="utf-8">
-  <title>MS-DOS Online</title>
-  <script src="https://js-dos.com/6.22/current/js-dos.js"></script>
+  <meta charset="utf-8" />
+  <title>GW-BASIC with DOSBox-X (mount ZIP)</title>
   <style>
-    body {
-      background-color: #426;
-      padding: 0;
-      margin: 0;
-    }
-    canvas {
-      width: 640px;
-      height: 400px;
-    }
-    div {
-      width: 640px;
-      height: 400px;
-      margin: auto auto;
-    }
+    html, body, #dos { height: 100%; margin: 0; }
   </style>
 </head>
-
 <body>
-  <div><canvas id="jsdos"></canvas></div>
+  <div id="dos"></div>
+
+  <!-- js-dos emulators -->
+  <script src="https://v8.js-dos.com/v8/build/releases/latest/emulators/emulators.js"></script>
+  <script src="https://v8.js-dos.com/v8/build/releases/latest/emulators-ui/emulators-ui.js"></script>
+
   <script>
-    Dos(document.getElementById("Dosbox-x"), { 
-        wdosboxUrl: "main.js" 
-    }).ready((fs, main) => {
-        main()
-    });
+  (async () => {
+    // Your ZIP containing gwbasic.exe + .BAS programs
+    const zipUrl = "basic.zip";
+
+    // 1. Resolve the raw ZIP (not a .jsdos bundle!)
+    const data = await emulatorsUi.network.downloadBinary(zipUrl);
+
+    // 2. Wrap it into a "fake" bundle (DOSBox-X worker needs a bundle object)
+    const bundle = {
+      type: "zip",
+      data: data.buffer,  // ArrayBuffer
+      name: "basic.zip",
+    };
+
+    // 3. Start DOSBox-X with the bundle
+    const ci = await emulators.dosboxXWorker(bundle);
+
+    // 4. Mount the ZIP as drive C: inside DOSBox-X
+    await ci.send("MOUNT C .\r");
+    await ci.send("C:\r");
+
+    // 5. Launch GW-BASIC
+    await ci.send("GWBASIC\r");
+
+    // Now inside GW-BASIC you can do: RUN "PROGRAM.BAS"
+  })();
   </script>
 </body>
-
 </html>
-
