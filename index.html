@@ -199,7 +199,7 @@
           throw new Error(`Failed to load basic.jsdos: ${bundle.status}`);
         }
         
-        const ci = await emulators.dosWorker(new Uint8Array(await bundle.arrayBuffer()));
+        const ci = await emulators.dosboxXWorker(new Uint8Array(await bundle.arrayBuffer()));
         currentEmulator = ci;
         
         const ctx = canvas.getContext('2d');
@@ -283,3 +283,4 @@
   </script>
 </body>
 </html>
+
