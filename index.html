@@ -7,33 +7,33 @@
     <script src="https://v8.js-dos.com/latest/emulators/emulators.js"></script>
     <style>
         html, body {
-            width: 100%;
-            height: 100%;
+            width: 100vw;
+            height: 100vh;
             padding: 0;
             margin: 0;
             background: #000;
             font-family: 'Courier New', monospace;
             overflow: hidden;
         }
-
         #root {
-            width: 100%;
-            height: 100%;
+            width: 100vw;
+            height: 100vh;
             background: #000;
             position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
-
         #dosbox-canvas {
-            width: 100%;
-            height: 100%;
             background: #000;
             image-rendering: pixelated;
             image-rendering: -moz-crisp-edges;
             image-rendering: crisp-edges;
             outline: none;
             display: block;
+            /* No width/height 100% here; set via JS for scaling */
+            box-shadow: 0 0 24px #00ff0044;
         }
-
         .status {
             position: absolute;
             top: 50%;
@@ -59,10 +59,9 @@
 
     <script type="module">
         emulators.pathPrefix = "https://v8.js-dos.com/latest/emulators/";
-        
+
         const canvas = document.getElementById("dosbox-canvas");
         const status = document.getElementById("status");
-        
         let currentEmulator = null;
 
         function updateStatus(message) {
@@ -73,57 +72,63 @@
             status.style.display = 'none';
         }
 
+        // Calculate the largest integer scale that fits, preserving aspect ratio (16:10)
+        function getMaxCanvasSize() {
+            const aspect = 16 / 10;
+            let width = window.innerWidth;
+            let height = window.innerHeight;
+            if (width / height > aspect) {
+                width = Math.floor(height * aspect);
+            } else {
+                height = Math.floor(width / aspect);
+            }
+            // Integer scale for sharp pixels
+            const scale = Math.max(1, Math.floor(Math.min(width / 320, height / 200)));
+            return {
+                width: 320 * scale,
+                height: 200 * scale,
+                scale
+            };
+        }
+
+        function resizeCanvas() {
+            const { width, height } = getMaxCanvasSize();
+            // Set the internal buffer to 320x200 (DOS native)
+            canvas.width = 320;
+            canvas.height = 200;
+            // Set the CSS display size to the scaled value
+            canvas.style.width = width + 'px';
+            canvas.style.height = height + 'px';
+        }
+
         async function runGWBasic() {
             try {
                 updateStatus("Loading GW-BASIC...");
-                
                 const bundle = await fetch("./basic.jsdos");
                 if (!bundle.ok) {
                     throw new Error(`Failed to load basic.jsdos: ${bundle.status}`);
                 }
-                
-                // Create command interface WITHOUT passing canvas - let js-dos create its own
+
                 const ci = await emulators.dosWorker(new Uint8Array(await bundle.arrayBuffer()));
                 currentEmulator = ci;
-                
-                // Set up frame rendering to our canvas
+
                 const ctx = canvas.getContext('2d');
                 const rgba = new Uint8ClampedArray(320 * 200 * 4);
-                
+
                 ci.events().onFrame((rgb, _rgba) => {
-                    // Convert RGB to RGBA
-                    for (let next = 0; next < 320 * 200; ++next) {
-                        rgba[next * 4 + 0] = rgb[next * 3 + 0]; // Red
-                        rgba[next * 4 + 1] = rgb[next * 3 + 1]; // Green  
-                        rgba[next * 4 + 2] = rgb[next * 3 + 2]; // Blue
-                        rgba[next * 4 + 3] = 255;               // Alpha
+                    for (let i = 0; i < 320 * 200; ++i) {
+                        rgba[i * 4 + 0] = rgb[i * 3 + 0];
+                        rgba[i * 4 + 1] = rgb[i * 3 + 1];
+                        rgba[i * 4 + 2] = rgb[i * 3 + 2];
+                        rgba[i * 4 + 3] = 255;
                     }
-                    
-                    // Create ImageData and scale to full canvas
                     const imageData = new ImageData(rgba, 320, 200);
-                    ctx.imageSmoothingEnabled = false;
-                    ctx.clearRect(0, 0, canvas.width, canvas.height);
-                    
-                    // Create temporary canvas for scaling
-                    const tempCanvas = document.createElement('canvas');
-                    tempCanvas.width = 320;
-                    tempCanvas.height = 200;
-                    const tempCtx = tempCanvas.getContext('2d');
-                    tempCtx.putImageData(imageData, 0, 0);
-                    
-                    // Draw scaled image to main canvas
-                    ctx.drawImage(tempCanvas, 0, 0, 320, 200, 0, 0, canvas.width, canvas.height);
+                    ctx.putImageData(imageData, 0, 0);
                 });
-                
-                // Set up keyboard event forwarding
+
                 setupKeyboardForwarding(ci);
-                
-                // Hide loading status
                 hideStatus();
-                
-                // Focus the canvas
                 canvas.focus();
-                
             } catch (error) {
                 console.error("Error loading GW-BASIC:", error);
                 updateStatus("Error: " + error.message);
@@ -131,7 +136,6 @@
         }
 
         function setupKeyboardForwarding(ci) {
-            // Key mapping for special keys
             const keyMap = {
                 'Enter': 13,
                 'Backspace': 8,
@@ -156,56 +160,34 @@
             const handleKeyDown = (e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                
                 let keyCode = e.keyCode;
-                
-                // Use custom mapping for special keys
                 if (keyMap[e.key]) {
                     keyCode = keyMap[e.key];
                 }
-                
-                // Send key event to DOS emulator
                 ci.sendKeyEvent(keyCode, true);
             };
 
             const handleKeyUp = (e) => {
                 e.preventDefault();
                 e.stopPropagation();
-                
                 let keyCode = e.keyCode;
-                
                 if (keyMap[e.key]) {
                     keyCode = keyMap[e.key];
                 }
-                
                 ci.sendKeyEvent(keyCode, false);
             };
 
-            // Add event listeners
             canvas.addEventListener('keydown', handleKeyDown, true);
             canvas.addEventListener('keyup', handleKeyUp, true);
             document.addEventListener('keydown', handleKeyDown, true);
             document.addEventListener('keyup', handleKeyUp, true);
-            
-            // Focus management
             canvas.addEventListener('click', () => canvas.focus());
             canvas.addEventListener('mousedown', () => canvas.focus());
-            
-            // Prevent context menu
             canvas.addEventListener('contextmenu', (e) => e.preventDefault());
         }
 
-        // Handle window resize
-        function handleResize() {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-        }
-
-        // Initialize
-        window.addEventListener('resize', handleResize);
-        handleResize();
-        
-        // Start GW-BASIC
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
         runGWBasic();
     </script>
 </body>
