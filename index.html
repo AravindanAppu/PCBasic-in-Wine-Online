@@ -63,7 +63,7 @@
         stop();
 
         const bundle = await fetch("https://v8.js-dos.com/bundles/digger.jsdos");
-        const ci = await emulators.dosWorker(new Uint8Array(await bundle.arrayBuffer()));
+        const ci = await emulators.dosboxXWorker(new Uint8Array(await bundle.arrayBuffer()));
         const rgba = new Uint8ClampedArray(320 * 200 * 4);
 
         ci.events().onFrame((rgb, _rgba) => {
@@ -83,3 +83,4 @@
 </script>
 </body>
 </html>
+
