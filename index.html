@@ -1,12 +1,11 @@
-<!doctype html>
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>GWBasic DOSBox Emulator</title>
-    <script src="https://v8.js-dos.com/latest/js-dos.js"></script>
-    <script src="https://v8.js-dos.com/latest/emulators/emulators.js"></script>
-    <style>
+  <meta charset="UTF-8">
+  <title>GW-BASIC Virtual Keyboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <script src="https://v8.js-dos.com/latest/emulators/emulators.js"></script>
+  <style>
     body {
       background: black;
       margin: 0;
@@ -18,11 +17,16 @@
     #screen-container {
       width: 100vw;
       height: 45vh;
+      position: relative;
     }
     #dos-root {
       width: 100%;
       height: 100%;
       border: 2px solid #666;
+      background: #000;
+      image-rendering: pixelated;
+      image-rendering: -moz-crisp-edges;
+      image-rendering: crisp-edges;
     }
     #keyboard-container {
       width: 100vw;
@@ -75,12 +79,26 @@
     .shift-active {
       background: #c96 !important;
     }
+    .status {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: #00ff00;
+      font-size: 18px;
+      background: rgba(0, 0, 0, 0.9);
+      padding: 20px;
+      border: 2px solid #00ff00;
+      border-radius: 5px;
+      text-align: center;
+      z-index: 1000;
+    }
   </style>
 </head>
-
 <body>
   <div id="screen-container">
     <canvas id="dos-root"></canvas>
+    <div id="status" class="status">Loading GW-BASIC...</div>
   </div>
 
   <div id="keyboard-container">
@@ -156,62 +174,112 @@
   </div>
 
   <script type="module">
-    let shiftActive = false;
-    let currentEmulator = null;
     emulators.pathPrefix = "https://v8.js-dos.com/latest/emulators/";
+    
+    const canvas = document.getElementById("dos-root");
+    const status = document.getElementById("status");
+    
+    let currentEmulator = null;
+    let shiftActive = false;
+
+    function updateStatus(message) {
+      status.textContent = message;
+    }
+
+    function hideStatus() {
+      status.style.display = 'none';
+    }
+
     async function runGWBasic() {
       try {
+        updateStatus("Loading GW-BASIC...");
+        
         const bundle = await fetch("./basic.jsdos");
+        if (!bundle.ok) {
+          throw new Error(`Failed to load basic.jsdos: ${bundle.status}`);
+        }
+        
         const ci = await emulators.dosWorker(new Uint8Array(await bundle.arrayBuffer()));
         currentEmulator = ci;
-      } catch (e) {
-        alert("Failed to load GW-BASIC emulator.");
+        
+        const ctx = canvas.getContext('2d');
+        const rgba = new Uint8ClampedArray(320 * 200 * 4);
+        
+        ci.events().onFrame((rgb, _rgba) => {
+          for (let next = 0; next < 320 * 200; ++next) {
+            rgba[next * 4 + 0] = rgb[next * 3 + 0];
+            rgba[next * 4 + 1] = rgb[next * 3 + 1];
+            rgba[next * 4 + 2] = rgb[next * 3 + 2];
+            rgba[next * 4 + 3] = 255;
+          }
+          
+          const imageData = new ImageData(rgba, 320, 200);
+          ctx.imageSmoothingEnabled = false;
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          
+          const tempCanvas = document.createElement('canvas');
+          tempCanvas.width = 320;
+          tempCanvas.height = 200;
+          const tempCtx = tempCanvas.getContext('2d');
+          tempCtx.putImageData(imageData, 0, 0);
+          
+          ctx.drawImage(tempCanvas, 0, 0, 320, 200, 0, 0, canvas.width, canvas.height);
+        });
+        
+        hideStatus();
+        
+      } catch (error) {
+        console.error("Error loading GW-BASIC:", error);
+        updateStatus("Error: " + error.message);
       }
     }
-    runGWBasic();
 
-    function simulateKeyEvent(keyCode, pressed) {
-      const eventType = pressed ? "keydown" : "keyup";
-      const event = document.createEvent("KeyboardEvent");
-      if (event.initKeyboardEvent) {
-        event.initKeyboardEvent(eventType, true, true, window, false, false, false, false, keyCode, 0);
-      } else {
-        event.initKeyEvent(eventType, true, true, window, false, false, false, false, keyCode, 0);
-      }
-      Object.defineProperty(event, "keyCode", { get: () => keyCode });
-      Object.defineProperty(event, "which", { get: () => keyCode });
-      document.dispatchEvent(event);
+    function resizeCanvas() {
+      canvas.width = canvas.offsetWidth;
+      canvas.height = canvas.offsetHeight;
     }
 
-    function toggleShift() {
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    // Virtual keyboard functions
+    window.toggleShift = function() {
       shiftActive = !shiftActive;
       document.getElementById("shift-key").classList.toggle("shift-active", shiftActive);
-    }
+    };
 
-    function pressKey(code) {
+    window.pressKey = function(code) {
+      if (!currentEmulator) return;
+      
       if (shiftActive) {
         const shiftedMap = {
           49:33,50:64,51:35,52:36,53:37,54:94,55:38,56:42,57:40,48:41,
           186:58,222:34,188:60,190:62,191:63,189:95,187:43
         };
+        
         if (code >= 65 && code <= 90) {
-          simulateKeyEvent(code,true);
-          simulateKeyEvent(code,false);
+          currentEmulator.sendKeyEvent(code, true);
+          currentEmulator.sendKeyEvent(code, false);
         } else if (shiftedMap[code]) {
-          simulateKeyEvent(shiftedMap[code],true);
-          simulateKeyEvent(shiftedMap[code],false);
+          currentEmulator.sendKeyEvent(shiftedMap[code], true);
+          currentEmulator.sendKeyEvent(shiftedMap[code], false);
         } else {
-          simulateKeyEvent(code,true);
-          simulateKeyEvent(code,false);
+          currentEmulator.sendKeyEvent(code, true);
+          currentEmulator.sendKeyEvent(code, false);
         }
-        shiftActive=false;
+        
+        shiftActive = false;
         document.getElementById("shift-key").classList.remove("shift-active");
       } else {
-        simulateKeyEvent(code,true);
-        simulateKeyEvent(code,false);
+        currentEmulator.sendKeyEvent(code, true);
+        currentEmulator.sendKeyEvent(code, false);
       }
+      
       if (navigator.vibrate) navigator.vibrate(20);
-    }
+    };
+
+    // Start GW-BASIC
+    runGWBasic();
   </script>
 </body>
 </html>
