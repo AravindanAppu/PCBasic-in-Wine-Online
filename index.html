@@ -1,42 +1,36 @@
 <!doctype html>
 <html>
 <head>
-  <meta charset="utf-8" />
-  <title>DOSBox-X Player</title>
-  <style>
-    html, body, #dos { height:100%; margin:0; }
-  </style>
-        <script src="https://v8.js-dos.com/v7/emulators/emulators.js"></script>
-        <script src="https://v8.js-dos.com/v7/emulators-ui/emulators-ui.js"></script>
-        <link rel="stylesheet" href="https://v8.js-dos.com/v7/emulators-ui/emulators-ui.css">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Digger Example</title>
+    <script src="https://v8.js-dos.com/latest/emulators/emulators.js"></script>
+    <style>
+        html, body, #root {
+            width: 100%;
+            height: 100%;
+            padding: 0;
+            margin: 0;
+            overflow: hidden;
+        }
+    </style>
 </head>
 <body>
-  <div id="dos"></div>
+    <div id="root"></div>
 
-  <script>
-  (async () => {
-    // make sure emulator knows where wasm/worker files are
-    emulators.pathPrefix = "https://v8.js-dos.com/v7/emulators/";
+    <script type="module">
 
-    // load a .jsdos bundle (contains DOSBox config + files)
-    // for testing you can use digger.jsdos, replace with your gwbasic bundle
-    const bundle = await emulatorsUi.network.resolveBundle("https://v8.js-dos.com/bundles/digger.jsdos");
+        emulators.pathPrefix = "https://v8.js-dos.com/latest/emulators/";
 
-    // start DOSBox-X worker backend
-    const ci = await emulators.dosboxWorker(bundle);
+        async function runDigger() {
+            stop();
 
-    // attach the default player UI (canvas + keyboard)
-    emulatorsUi.canvas(ci, document.getElementById("dos"));
+            const bundle = await fetch("https://v8.js-dos.com/bundles/digger.jsdos");
+            const ci = await emulators.dosboxXWorker(new Uint8Array(await bundle.arrayBuffer()));
 
-    // optional: send a command to DOSBox-X
-    // await ci.send("gwbasic\r");
-  })();
-  </script>
+        }
+
+        runDigger();
+    </script>
 </body>
 </html>
-
-
-
-
-
-
