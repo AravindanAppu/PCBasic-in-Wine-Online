@@ -26,16 +26,18 @@
     <div id="dos" style="width: 100%; height: 100%"></div>
 
     <script>
-        Dos(document.getElementById("dos"), {
+    <script>
+        const props = Dos(document.getElementById("dos"), {
            url: "./basic.jsdos",
            backend : "dosboxX",
            kiosk : true,
         }
-            .stop()
         );
+        props.stop();
     </script>
 </body>
 </html>
+
 
 
 
