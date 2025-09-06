@@ -6,9 +6,9 @@
   <style>
     html, body, #dos { height:100%; margin:0; }
   </style>
-        <script src="https://v8.js-dos.com/v7/build/releases/latest/emulators/emulators.js"></script>
-        <script src="https://v8.js-dos.com/v7/build/releases/latest/emulators-ui/emulators-ui.js"></script>
-        <link rel="stylesheet" href="https://v8.js-dos.com/v7/build/releases/latest/emulators-ui/emulators-ui.css">
+        <script src="https://v8.js-dos.com/v7/latest/emulators/emulators.js"></script>
+        <script src="https://v8.js-dos.com/v7/latest/emulators-ui/emulators-ui.js"></script>
+        <link rel="stylesheet" href="https://v8.js-dos.com/v7/latest/emulators-ui/emulators-ui.css">
 </head>
 <body>
   <div id="dos"></div>
@@ -16,7 +16,7 @@
   <script>
   (async () => {
     // make sure emulator knows where wasm/worker files are
-    emulators.pathPrefix = "https://v8.js-dos.com/v7/build/releases/latest/js-dos/";
+    emulators.pathPrefix = "https://v8.js-dos.com/v7/latest/js-dos/";
 
     // load a .jsdos bundle (contains DOSBox config + files)
     // for testing you can use digger.jsdos, replace with your gwbasic bundle
@@ -34,6 +34,7 @@
   </script>
 </body>
 </html>
+
 
 
 
