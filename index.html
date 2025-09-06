@@ -3,46 +3,46 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>GW-BASIC Emulator</title>
+    <title>GWBasic Emulator</title>
     <script src="https://v8.js-dos.com/latest/emulators/emulators.js"></script>
     <style>
         html, body, #root {
             width: 100%;
             height: 100%;
-            margin: 0;
             padding: 0;
+            margin: 0;
             overflow: hidden;
         }
     </style>
 </head>
 
 <body>
-    <div id="root"></div>
+<div id="root">
+</div>
+<script type="module">
+    emulators.pathPrefix = "https://v8.js-dos.com/latest/emulators/";
 
-    <script>
-    (async () => {
-        emulators.pathPrefix = "https://v8.js-dos.com/latest/emulators/";
+    async function rungwbasic() {
+        stop();
 
-        try {
-            // Fetch the .jsdos file containing gwbasic.exe and related files
-            const response = await fetch("./basic.jsdos");
-            if (!response.ok) throw new Error("Failed to fetch basic.jsdos");
-            const arrayBuffer = await response.arrayBuffer();
-            const bundle = new Uint8Array(arrayBuffer);
+        const bundle = await fetch("./basic.jsdos");
+        const ci = await emulators.dosWorker(new Uint8Array(await bundle.arrayBuffer()));
+        const rgba = new Uint8ClampedArray(320 * 200 * 4);
 
-            // Start DOSBox-X with the provided bundle
-            const ci = await emulators.dosboxXWorker(bundle);
+        ci.events().onFrame((rgb, _rgba) => {
+            for (let next = 0; next < 320 * 200; ++next) {
+                 rgba[next * 4 + 0] = rgb[next * 3 + 0];
+                 rgba[next * 4 + 1] = rgb[next * 3 + 1];
+                 rgba[next * 4 + 2] = rgb[next * 3 + 2];
+                 rgba[next * 4 + 3] = 255;
+            }
 
-            console.log("DOSBox-X is running!");
-        } catch (err) {
-            console.error("Error:", err);
-            alert("Failed to start emulator: " + err.message);
-        }
-    })();
-    </script>
+            ctx?.putImageData(new ImageData(rgba, 320, 200), 0, 0);
+            texture.needsUpdate = true;
+        });
+    }
+
+    rungwbasic();
+</script>
 </body>
 </html>
-
-
-
-
