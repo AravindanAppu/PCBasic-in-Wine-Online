@@ -155,15 +155,21 @@
     </div>
   </div>
 
-    <script type="module">
-        emulators.pathPrefix = "https://v8.js-dos.com/latest/emulators/";
-        async function runGWBasic() {
-            try {
-                const bundle = await fetch("./basic.jsdos");
-                const ci = await emulators.dosWorker(new Uint8Array(await bundle.arrayBuffer()));
-                currentEmulator = ci;
-        runGWBasic();
-            
+  <script type="module">
+    let shiftActive = false;
+    let currentEmulator = null;
+    emulators.pathPrefix = "https://v8.js-dos.com/latest/emulators/";
+    async function runGWBasic() {
+      try {
+        const bundle = await fetch("./basic.jsdos");
+        const ci = await emulators.dosWorker(new Uint8Array(await bundle.arrayBuffer()));
+        currentEmulator = ci;
+      } catch (e) {
+        alert("Failed to load GW-BASIC emulator.");
+      }
+    }
+    runGWBasic();
+
     function simulateKeyEvent(keyCode, pressed) {
       const eventType = pressed ? "keydown" : "keyup";
       const event = document.createEvent("KeyboardEvent");
@@ -206,10 +212,6 @@
       }
       if (navigator.vibrate) navigator.vibrate(20);
     }
-            }
-    </script>
+  </script>
 </body>
 </html>
-
-
-
