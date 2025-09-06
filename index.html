@@ -1,43 +1,76 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>GWBasic in Browser</title>
+    <meta charset="UTF-8" />
+    <title>GWBasic Emulator – Clean Exit</title>
 
     <style>
         html, body {
             height: 100%;
+            margin: 0;
         }
-
         #dos {
             width: 100%;
             height: 100%;
         }
     </style>
 
-    <!-- js-dos style sheet -->
     <link rel="stylesheet" href="https://v8.js-dos.com/latest/js-dos.css">
-
-    <!-- js-dos -->
     <script src="https://v8.js-dos.com/latest/js-dos.js"></script>
 </head>
 <body>
 
-    <div id="dos" style="width: 100%; height: 100%"></div>
+    <div id="dos"></div>
 
     <script>
-        Dos(document.getElementById("dos"), {
-           url: "./basic.jsdos",
-           backend : "dosboxX",
-           kiosk : true,
+        const elem = document.getElementById("dos");
+        let emulatorProps = null;
+
+        // Clear localStorage
+        function clearLocalStorage() {
+            localStorage.removeItem("dosState");
+            console.log("Local storage cleared");
         }
-        );
+
+        // Delete IndexedDB used by js-dos
+        function clearIndexedDB() {
+            let DBDeleteRequest = window.indexedDB.deleteDatabase('js-dos');
+            DBDeleteRequest.onerror = function() {
+                console.warn("Failed to delete IndexedDB");
+            };
+            DBDeleteRequest.onsuccess = function() {
+                console.log("IndexedDB deleted");
+            };
+        }
+
+        // Stop emulator and clean up
+        function cleanUp() {
+            if (emulatorProps) {
+                emulatorProps.stop().then(function() {
+                    console.log("Emulator stopped");
+                });
+            }
+            clearLocalStorage();
+            clearIndexedDB();
+        }
+
+        // Listen for window close or navigation away
+        window.addEventListener("beforeunload", function(event) {
+            cleanUp();
+            // Optional: show confirmation dialog
+            // event.returnValue = "Are you sure you want to leave?";
+        });
+
+        // Start emulator fresh
+        Dos(elem, {
+            url: "./basic.jsdos",
+            backend: "dosboxX",
+            kiosk: true
+        }).then(function(props) {
+            emulatorProps = props;
+            console.log("Emulator started");
+        });
     </script>
+
 </body>
 </html>
-
-
-
-
-
-
