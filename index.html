@@ -26,10 +26,18 @@
     <div id="dos" style="width: 100%; height: 100%"></div>
 
     <script>
-        Dos(document.getElementById("dos"),
-           url="./basic.jsdos"
+        Dos(document.getElementById("dos"), {
+           url: "./basic.jsdos",
+           backend : "dosboxX",
+           backendLocked : false,
+           autoStart : true,
+           renderAspect : "Fit",
+           kiosk : true,
+           noCloud : true
+        }
            );
     </script>
 </body>
 </html>
+
 
