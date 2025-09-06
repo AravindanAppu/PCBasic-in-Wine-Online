@@ -11,8 +11,9 @@
   <div id="dos"></div>
 
   <!-- js-dos emulators -->
-  <script src="https://v8.js-dos.com/v8/build/releases/latest/emulators/emulators.js"></script>
-  <script src="https://v8.js-dos.com/v8/build/releases/latest/emulators-ui/emulators-ui.js"></script>
+  <script src="https://v8.js-dos.com/latest/emulators/emulators.js"></script>
+  <script type="module">
+    emulators.pathPrefix = "https://v8.js-dos.com/latest/emulators/";
 
   <script>
   (async () => {
@@ -44,3 +45,4 @@
   </script>
 </body>
 </html>
+
