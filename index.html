@@ -74,7 +74,7 @@
                     throw new Error(`Failed to load basic.jsdos: ${bundle.status}`);
                 }
                 
-                currentEmulator = await emulators.dosboxXWorker(new Uint8Array(await bundle.arrayBuffer()));
+                currentEmulator = await emulators.dosboxXDirect(new Uint8Array(await bundle.arrayBuffer()));
                 
                 const rgba = new Uint8ClampedArray(320 * 200 * 4);
                 
@@ -141,3 +141,4 @@
     </script>
 </body>
 </html>
+
