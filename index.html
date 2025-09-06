@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>GWBasic DOSBox-X Emulator</title>
+    <title>GWBasic DOSBox Emulator</title>
     <script src="https://v8.js-dos.com/latest/emulators/emulators.js"></script>
     <style>
         html, body {
@@ -30,6 +30,7 @@
             image-rendering: pixelated;
             image-rendering: -moz-crisp-edges;
             image-rendering: crisp-edges;
+            outline: none;
         }
 
         .status {
@@ -48,7 +49,7 @@
 
 <body>
     <div id="root">
-        <canvas id="dosbox-canvas"></canvas>
+        <canvas id="dosbox-canvas" tabindex="0"></canvas>
         <div id="status" class="status">Loading GW-BASIC...</div>
     </div>
 
@@ -74,7 +75,7 @@
                     throw new Error(`Failed to load basic.jsdos: ${bundle.status}`);
                 }
                 
-                currentEmulator = await emulators.dosboxXDirect(new Uint8Array(await bundle.arrayBuffer()));
+                currentEmulator = await emulators.dosWorker(new Uint8Array(await bundle.arrayBuffer()));
                 
                 const rgba = new Uint8ClampedArray(320 * 200 * 4);
                 
@@ -90,27 +91,75 @@
                     // Create ImageData and draw to canvas
                     const imageData = new ImageData(rgba, 320, 200);
                     ctx.clearRect(0, 0, canvas.width, canvas.height);
-                    ctx.putImageData(imageData, 0, 0);
                     
                     // Scale up the image to fill canvas
-                    const tempCanvas = document.createElement('canvas');
-                    tempCanvas.width = 320;
-                    tempCanvas.height = 200;
-                    const tempCtx = tempCanvas.getContext('2d');
-                    tempCtx.putImageData(imageData, 0, 0);
-                    
-                    ctx.clearRect(0, 0, canvas.width, canvas.height);
                     ctx.imageSmoothingEnabled = false;
-                    ctx.drawImage(tempCanvas, 0, 0, 320, 200, 0, 0, canvas.width, canvas.height);
+                    ctx.drawImage(
+                        (() => {
+                            const tempCanvas = document.createElement('canvas');
+                            tempCanvas.width = 320;
+                            tempCanvas.height = 200;
+                            const tempCtx = tempCanvas.getContext('2d');
+                            tempCtx.putImageData(imageData, 0, 0);
+                            return tempCanvas;
+                        })(), 
+                        0, 0, 320, 200, 
+                        0, 0, canvas.width, canvas.height
+                    );
                 });
                 
-                // Hide status immediately after loading
+                // Setup keyboard input handling
+                setupKeyboardHandling();
+                
+                // Hide status and focus canvas
                 status.style.display = 'none';
+                canvas.focus();
                 
             } catch (error) {
                 console.error("Error loading GW-BASIC:", error);
                 updateStatus("Error: " + error.message);
             }
+        }
+
+        function setupKeyboardHandling() {
+            if (!currentEmulator) return;
+
+            // Handle keydown events
+            const handleKeyDown = (event) => {
+                if (currentEmulator) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    
+                    // Send keydown event to emulator
+                    currentEmulator.sendKeyEvent(event.keyCode, true);
+                }
+            };
+
+            // Handle keyup events
+            const handleKeyUp = (event) => {
+                if (currentEmulator) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    
+                    // Send keyup event to emulator
+                    currentEmulator.sendKeyEvent(event.keyCode, false);
+                }
+            };
+
+            // Add event listeners
+            canvas.addEventListener('keydown', handleKeyDown);
+            canvas.addEventListener('keyup', handleKeyUp);
+            document.addEventListener('keydown', handleKeyDown);
+            document.addEventListener('keyup', handleKeyUp);
+
+            // Handle mouse clicks to ensure canvas focus
+            canvas.addEventListener('click', () => {
+                canvas.focus();
+            });
+
+            canvas.addEventListener('mousedown', () => {
+                canvas.focus();
+            });
         }
 
         // Handle window resize
@@ -119,26 +168,20 @@
             canvas.height = window.innerHeight;
         }
 
-        // Handle keyboard input forwarding to emulator
-        document.addEventListener('keydown', function(event) {
-            if (currentEmulator) {
-                // Prevent browser shortcuts when emulator is active
-                event.preventDefault();
-            }
-        });
-
-        // Canvas click to focus
-        canvas.addEventListener('click', function() {
-            canvas.focus();
-        });
+        // Prevent context menu
+        canvas.addEventListener('contextmenu', (e) => e.preventDefault());
 
         // Initialize
         window.addEventListener('resize', resizeCanvas);
         resizeCanvas();
+        
+        // Focus canvas on page load
+        window.addEventListener('load', () => {
+            canvas.focus();
+        });
         
         // Start GW-BASIC
         runGWBasic();
     </script>
 </body>
 </html>
-
