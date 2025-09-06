@@ -36,9 +36,6 @@
                  rgba[next * 4 + 2] = rgb[next * 3 + 2];
                  rgba[next * 4 + 3] = 255;
             }
-
-            ctx?.putImageData(new ImageData(rgba, 320, 200), 0, 0);
-            texture.needsUpdate = true;
         });
     }
 
@@ -46,3 +43,4 @@
 </script>
 </body>
 </html>
+
