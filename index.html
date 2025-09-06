@@ -27,6 +27,10 @@
 
     <script>
         Dos(document.getElementById("dos"), {
+           dosboxConf: `
+           [parallel]
+           parallel1=file file:output.txt
+           `,
            url: "./basic.jsdos",
            backend : "dosboxX",
            backendLocked : false,
@@ -39,6 +43,7 @@
     </script>
 </body>
 </html>
+
 
 
 
