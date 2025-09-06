@@ -2,49 +2,47 @@
 <html>
 <head>
   <meta charset="utf-8" />
-  <title>GW-BASIC with DOSBox-X (mount ZIP)</title>
+  <title>GW-BASIC in DOSBox-X (js-dos v8)</title>
   <style>
     html, body, #dos { height: 100%; margin: 0; }
   </style>
+  <!-- js-dos v7 emulators -->
+<script src="https://v8.js-dos.com/v7/emulators/emulators.js"></script>
+<script src="https://v8.js-dos.com/v7/emulators-ui/emulators-ui.js"></script>
 </head>
 <body>
   <div id="dos"></div>
-
-  <!-- js-dos emulators -->
-<script src="https://v8.js-dos.com/v7/emulators/emulators.js"></script>
-<script src="https://v8.js-dos.com/v7/emulators-ui/emulators-ui.js"></script>
+  <script>
 <script type="module">
     emulators.pathPrefix = "https://v8.js-dos.com/v7/emulators/";
-    
-  (async () => {
-    // Your ZIP containing gwbasic.exe + .BAS programs
-    const zipUrl = "basic.zip";
 
-    // 1. Resolve the raw ZIP (not a .jsdos bundle!)
-    const data = await emulatorsUi.network.downloadBinary(zipUrl);
+    // load your plain ZIP (not .jsdos bundle)
+    const resp = await fetch("basic.zip");
+    const ab = await resp.arrayBuffer();
 
-    // 2. Wrap it into a "fake" bundle (DOSBox-X worker needs a bundle object)
+    // wrap into a bundle object DOSBox-X understands
     const bundle = {
       type: "zip",
-      data: data.buffer,  // ArrayBuffer
       name: "basic.zip",
+      data: ab
     };
 
-    // 3. Start DOSBox-X with the bundle
+    // start DOSBox-X worker
     const ci = await emulators.dosboxXWorker(bundle);
 
-    // 4. Mount the ZIP as drive C: inside DOSBox-X
-    await ci.send("MOUNT C .\r");
-    await ci.send("C:\r");
+    // now we can send DOS commands directly
+    // mount the extracted files as drive D:
+    await ci.send("mount d .\r");
+    await ci.send("d:\r");
+    await ci.send("gwbasic\r");
 
-    // 5. Launch GW-BASIC
-    await ci.send("GWBASIC\r");
-
-    // Now inside GW-BASIC you can do: RUN "PROGRAM.BAS"
-  })();
+    // at this point GW-BASIC is running.
+    // from here you can LOAD/RUN BAS programs manually,
+    // or script keystrokes with more ci.send("...")
+  })().catch(err => {
+    console.error(err);
+    alert("Error: " + err.message);
+  });
   </script>
 </body>
 </html>
-
-
-
