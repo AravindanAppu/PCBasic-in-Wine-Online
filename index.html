@@ -34,17 +34,11 @@
     await ci.send("mount d .\r");
     await ci.send("d:\r");
     await ci.send("gwbasic\r");
-
-    // at this point GW-BASIC is running.
-    // from here you can LOAD/RUN BAS programs manually,
-    // or script keystrokes with more ci.send("...")
-  ().catch(err => {
-    console.error(err);
-    alert("Error: " + err.message);
-  });
+    
   </script>
 </body>
 </html>
+
 
 
 
