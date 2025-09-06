@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>GWBasic DOSBox Emulator</title>
+    <title>GWBasic DOSBox-X Emulator</title>
     <script src="https://v8.js-dos.com/latest/emulators/emulators.js"></script>
     <style>
         html, body {
@@ -26,7 +26,6 @@
         }
 
         #dosbox-canvas {
-            border: 2px solid #00ff00;
             background: #000;
             image-rendering: pixelated;
             image-rendering: -moz-crisp-edges;
@@ -49,7 +48,7 @@
 
 <body>
     <div id="root">
-        <canvas id="dosbox-canvas" width="640" height="400"></canvas>
+        <canvas id="dosbox-canvas"></canvas>
         <div id="status" class="status">Loading GW-BASIC...</div>
     </div>
 
@@ -75,7 +74,7 @@
                     throw new Error(`Failed to load basic.jsdos: ${bundle.status}`);
                 }
                 
-                currentEmulator = await emulators.dosWorker(new Uint8Array(await bundle.arrayBuffer()));
+                currentEmulator = await emulators.dosboxXWorker(new Uint8Array(await bundle.arrayBuffer()));
                 
                 const rgba = new Uint8ClampedArray(320 * 200 * 4);
                 
@@ -105,12 +104,8 @@
                     ctx.drawImage(tempCanvas, 0, 0, 320, 200, 0, 0, canvas.width, canvas.height);
                 });
                 
-                updateStatus("GW-BASIC loaded successfully");
-                
-                // Hide status after 3 seconds
-                setTimeout(() => {
-                    status.style.opacity = '0.3';
-                }, 3000);
+                // Hide status immediately after loading
+                status.style.display = 'none';
                 
             } catch (error) {
                 console.error("Error loading GW-BASIC:", error);
@@ -120,18 +115,8 @@
 
         // Handle window resize
         function resizeCanvas() {
-            const aspectRatio = 320 / 200;
-            const windowAspectRatio = window.innerWidth / window.innerHeight;
-            
-            if (windowAspectRatio > aspectRatio) {
-                // Window is wider than canvas aspect ratio
-                canvas.height = Math.min(window.innerHeight - 40, 600);
-                canvas.width = canvas.height * aspectRatio;
-            } else {
-                // Window is taller than canvas aspect ratio
-                canvas.width = Math.min(window.innerWidth - 40, 960);
-                canvas.height = canvas.width / aspectRatio;
-            }
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
         }
 
         // Handle keyboard input forwarding to emulator
