@@ -163,7 +163,7 @@
                 const ci = await emulators.dosWorker(new Uint8Array(await bundle.arrayBuffer()));
                 currentEmulator = ci;
         runGWBasic();
-            }
+            
     function simulateKeyEvent(keyCode, pressed) {
       const eventType = pressed ? "keydown" : "keyup";
       const event = document.createEvent("KeyboardEvent");
@@ -206,9 +206,10 @@
       }
       if (navigator.vibrate) navigator.vibrate(20);
     }
-
+            }
     </script>
 </body>
 </html>
+
 
 
