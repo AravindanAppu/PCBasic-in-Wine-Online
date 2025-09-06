@@ -23,7 +23,7 @@
     const bundle = await emulatorsUi.network.resolveBundle("https://v8.js-dos.com/bundles/digger.jsdos");
 
     // start DOSBox-X worker backend
-    const ci = await emulators.dosboxXWorker(bundle);
+    const ci = await emulators.dosboxWorker(bundle);
 
     // attach the default player UI (canvas + keyboard)
     emulatorsUi.canvas(ci, document.getElementById("dos"));
@@ -34,6 +34,7 @@
   </script>
 </body>
 </html>
+
 
 
 
