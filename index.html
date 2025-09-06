@@ -1,39 +1,25 @@
 <!doctype html>
 <html>
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>GWBasic in DOSBOX-X</title>
-    <script src="https://v8.js-dos.com/latest/emulators/emulators.js"></script>
-    <style>
-        html, body, #root {
-            width: 100%;
-            height: 100%;
-            padding: 0;
-            margin: 0;
-            overflow: hidden;
-        }
-    </style>
-</head>
-<body>
-    <div id="root"></div>
-
-    <script type="module">
-
-        emulators.pathPrefix = "https://v8.js-dos.com/latest/emulators/";
-        const zipUrl = "./basic.zip";
-        const response = await fetch(zipUrl);
-        if (!response.ok) throw new Error("Failed to fetch ZIP: " + response.status);
-        const arrayBuffer = await response.arrayBuffer();
-        const bundle = {
-                type: "zip",
-                name: "basic.zip",
-                data: arrayBuffer
-            };
-        const ci = await emulators.dosboxXWorker(bundle);
-
-        emulatorsUi.canvas(ci, document.getElementById("dos"));
-    </script>
-</body>
+    <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+        <style>
+         html, body, #jsdos {
+             width: 100%;
+             height: 100%;
+             margin: 0;
+             padding: 0;
+         }
+        </style>
+        <script src="https://v8.js-dos.com/v7/emulators/emulators.js"></script>
+        <script src="https://v8.js-dos.com/v7/emulators-ui/emulators-ui.js"></script>
+        <link rel="stylesheet" href="https://v8.js-dos.com/v7/emulators-ui/emulators-ui.css">
+    </head>
+    <body>
+        <div id="jsdos" />
+        <script>
+         emulators.pathPrefix = "https://v8.js-dos.com/v7/emulators/";
+         Dos(document.getElementById("jsdos"))
+             .run(./basic.jsdos)
+        </script>
+    </body>
 </html>
-
