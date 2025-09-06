@@ -21,7 +21,6 @@
       display: flex;
       justify-content: center;
       align-items: center;
-      /* Center the canvas */
     }
     #dos-root {
       border: 2px solid #666;
@@ -30,7 +29,6 @@
       image-rendering: -moz-crisp-edges;
       image-rendering: crisp-edges;
       display: block;
-      /* Remove width/height: 100% to allow JS to control sizing */
       max-width: 100vw;
       max-height: 100%;
     }
@@ -208,11 +206,12 @@
         newHeight = h;
         newWidth = h * 320 / 200;
       }
-      // Set both CSS and actual canvas size
+      // Only set the CSS size for scaling
       canvas.style.width = newWidth + "px";
       canvas.style.height = newHeight + "px";
-      canvas.width = Math.round(newWidth);
-      canvas.height = Math.round(newHeight);
+      // Always keep the canvas buffer at 320x200 for pixel-perfect rendering
+      canvas.width = 320;
+      canvas.height = 200;
     }
 
     window.addEventListener('resize', resizeCanvas);
