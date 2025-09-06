@@ -17,12 +17,13 @@
     <body>
         <div id="jsdos" />
         <script>
-         emulators.pathPrefix = "https://v8.js-dos.com/v7/emulators/";
-         Dos(document.getElementById("jsdos"))
-             .run("./basic.jsdos")
+        emulators.pathPrefix = "https://v8.js-dos.com/v7/emulators/";
+        const bundle = await fetch("./basic.jsdos");
+        const ci = await emulators.dosWorker(new Uint8Array(await bundle.arrayBuffer()));
         </script>
     </body>
 </html>
+
 
 
 
