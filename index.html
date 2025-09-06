@@ -20,6 +20,18 @@
             width: 100%;
             height: 100%;
             background: #000;
+            position: relative;
+        }
+
+        #dosbox-canvas {
+            width: 100%;
+            height: 100%;
+            background: #000;
+            image-rendering: pixelated;
+            image-rendering: -moz-crisp-edges;
+            image-rendering: crisp-edges;
+            outline: none;
+            display: block;
         }
 
         .status {
@@ -41,13 +53,14 @@
 
 <body>
     <div id="root">
+        <canvas id="dosbox-canvas" tabindex="0"></canvas>
         <div id="status" class="status">Loading GW-BASIC...</div>
     </div>
 
     <script type="module">
         emulators.pathPrefix = "https://v8.js-dos.com/latest/emulators/";
         
-        const root = document.getElementById("root");
+        const canvas = document.getElementById("dosbox-canvas");
         const status = document.getElementById("status");
         
         let currentEmulator = null;
@@ -69,23 +82,9 @@
                     throw new Error(`Failed to load basic.jsdos: ${bundle.status}`);
                 }
                 
-                // Use dosboxXWorker for better compatibility
-                currentEmulator = await emulators.dosboxXWorker(new Uint8Array(await bundle.arrayBuffer()));
-                
-                // Create the DOS screen canvas element
-                const canvas = currentEmulator.getCanvas();
-                
-                // Style the canvas for full screen
-                canvas.style.width = '100%';
-                canvas.style.height = '100%';
-                canvas.style.imageRendering = 'pixelated';
-                canvas.style.imageRendering = '-moz-crisp-edges';
-                canvas.style.imageRendering = 'crisp-edges';
-                canvas.style.background = '#000';
-                canvas.style.display = 'block';
-                
-                // Add canvas to root
-                root.appendChild(canvas);
+                // Create command interface using the canvas
+                const ci = await emulators.dosWorker(new Uint8Array(await bundle.arrayBuffer()), canvas);
+                currentEmulator = ci;
                 
                 // Hide loading status
                 hideStatus();
@@ -93,8 +92,7 @@
                 // Focus the canvas for keyboard input
                 canvas.focus();
                 
-                // Set up proper keyboard event handling
-                setupKeyboardHandling(canvas);
+                // The canvas should now automatically handle DOS rendering and keyboard input
                 
             } catch (error) {
                 console.error("Error loading GW-BASIC:", error);
@@ -102,101 +100,53 @@
             }
         }
 
-        function setupKeyboardHandling(canvas) {
-            // Make canvas focusable
-            canvas.tabIndex = 0;
-            canvas.style.outline = 'none';
-            
-            // Prevent browser shortcuts and handle all keyboard events
-            const preventDefaults = (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                return false;
-            };
-
-            // Key event handlers
-            const keyHandler = (e) => {
-                preventDefaults(e);
-                
-                // Let js-dos handle the keyboard events natively
-                // The emulator should automatically capture keyboard input
-                // when the canvas is focused
-            };
-
-            // Add event listeners
-            canvas.addEventListener('keydown', keyHandler, true);
-            canvas.addEventListener('keyup', keyHandler, true);
-            canvas.addEventListener('keypress', keyHandler, true);
-            
-            // Document level handlers for special keys
-            document.addEventListener('keydown', (e) => {
-                // Always prevent browser shortcuts when emulator is running
-                if (currentEmulator) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                }
-            }, true);
-
-            document.addEventListener('keyup', (e) => {
-                if (currentEmulator) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                }
-            }, true);
-
-            // Focus management
-            canvas.addEventListener('click', () => {
-                canvas.focus();
-            });
-
-            canvas.addEventListener('mousedown', () => {
-                canvas.focus();
-            });
-
-            // Prevent context menu
-            canvas.addEventListener('contextmenu', preventDefaults);
-            
-            // Ensure canvas stays focused
-            canvas.addEventListener('blur', () => {
-                setTimeout(() => canvas.focus(), 10);
-            });
-
-            // Initial focus
-            setTimeout(() => canvas.focus(), 100);
-        }
-
         // Handle window resize
         function handleResize() {
-            if (currentEmulator) {
-                const canvas = currentEmulator.getCanvas();
-                if (canvas) {
-                    // Force redraw on resize
-                    canvas.style.width = '100%';
-                    canvas.style.height = '100%';
-                }
-            }
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
         }
 
-        // Disable text selection and dragging
+        // Prevent browser shortcuts and context menu
+        document.addEventListener('keydown', (e) => {
+            if (currentEmulator) {
+                // Don't prevent F5 (refresh) and F12 (dev tools) for debugging
+                if (e.key === 'F5' || e.key === 'F12') {
+                    return;
+                }
+                e.preventDefault();
+                e.stopPropagation();
+            }
+        }, true);
+
+        document.addEventListener('keyup', (e) => {
+            if (currentEmulator) {
+                if (e.key === 'F5' || e.key === 'F12') {
+                    return;
+                }
+                e.preventDefault();
+                e.stopPropagation();
+            }
+        }, true);
+
+        canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+
+        // Focus management
+        canvas.addEventListener('click', () => canvas.focus());
+        canvas.addEventListener('mousedown', () => canvas.focus());
+
+        // Disable text selection
         document.addEventListener('selectstart', (e) => e.preventDefault());
-        document.addEventListener('dragstart', (e) => e.preventDefault());
 
         // Initialize
         window.addEventListener('resize', handleResize);
+        handleResize();
+        
+        // Auto-focus canvas
         window.addEventListener('load', () => {
-            // Start GW-BASIC after page loads
-            runGWBasic();
+            canvas.focus();
         });
         
-        // Prevent page navigation on special keys
-        window.addEventListener('beforeunload', (e) => {
-            if (currentEmulator) {
-                e.preventDefault();
-                return '';
-            }
-        });
-        
-        // Start GW-BASIC immediately
+        // Start GW-BASIC
         runGWBasic();
     </script>
 </body>
