@@ -26,17 +26,21 @@
     <div id="dos" style="width: 100%; height: 100%"></div>
 
     <script>
-        Dos(document.getElementById("dos"), {
-            url: "./basic.zip",
-            dosboxConf: "./dosbox.conf",
+        const props = Dos(document.getElementById("dos"), {
+        url: "./basic.zip",
+        dosboxConf: "./dosbox.conf",
         backend:"dosboxX",
         backendLocked:true,
         autoSave:false,
         kiosk:true,
         });
+        fs.readFile("output.txt").then(data => {
+        props.stop();
+        })
     </script>
 </body>
 </html>
+
 
 
 
