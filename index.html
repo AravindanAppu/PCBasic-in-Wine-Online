@@ -38,13 +38,15 @@
                   try {
                   const fileData = await ci.fsReadFile('output.txt');
                   props.stop(); // Stop the emulator if the file is found
-      } 
+      } catch (error) {
+      }
     }
   },
         });
     </script>
 </body>
 </html>
+
 
 
 
