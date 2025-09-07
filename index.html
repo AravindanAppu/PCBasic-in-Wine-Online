@@ -27,7 +27,7 @@
 
     <script>
         Dos(document.getElementById("dos"), {
-            url: "./basic.zip"
+            url: "./basic.zip",
             dosboxConf: `
 [sdl]
 autolock=false
@@ -218,13 +218,14 @@ echo off
 mount c .
 c:
 `,
-        backend:"dosboxX"
-        backendLocked:true
-        autoSave:false
-        kiosk:true
+        backend:"dosboxX",
+        backendLocked:true,
+        autoSave:false,
+        kiosk:true,
         });
     </script>
 </body>
 </html>
+
 
 
