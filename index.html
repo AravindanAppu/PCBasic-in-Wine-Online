@@ -43,7 +43,7 @@ const props = Dos(document.getElementById("dos"), {
               .then(data => {
                 console.log("output.txt found! Stopping emulator...");
                 clearInterval(interval); // Stop checking
-                ci.props.stop(); // Stop emulator
+                props.stop(); // Stop emulator
               })
               .catch(err => {
                 // File not found yet, keep waiting
@@ -55,6 +55,7 @@ const props = Dos(document.getElementById("dos"), {
     </script>
 </body>
 </html>
+
 
 
 
