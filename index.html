@@ -33,16 +33,18 @@
         backendLocked:true,
         autoSave:false,
         kiosk:true,
-        onEvent: {'ci-ready': ci) => {
+        onEvent: ('ci-ready': ci) => {
             if(ci.fsReadFile("output.txt")){
             props.stop(); // ✅ Stop emulator after file is found
       }
+    },
     }
   },
 });
     </script>
 </body>
 </html>
+
 
 
 
