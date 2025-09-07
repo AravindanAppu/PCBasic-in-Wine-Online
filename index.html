@@ -15,9 +15,8 @@
 <body>
 <canvas id="jsdos"></canvas>
 <script>
-    Dos(document.getElementById("jsdos"), {
-        wdosboxUrl: "https://v8.js-dos.com/latest/emulators/wdosbox-x.js",
-    }).ready((fs, main) => {
+    Dos(dosRoot, { wdosboxUrl: "https://v8.js-dos.com/latest/emulators/wdosbox-x.js" })
+        .ready((fs, main) => {
         fs.extract("./basic.jsdos").then(() => {
             main(["-conf", ".jsdos/dosbox.conf"]);
         });
@@ -25,3 +24,4 @@
 </script>
 </body>
 </html>
+
