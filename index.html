@@ -1,33 +1,27 @@
-<!DOCTYPE html>
-<html lang="en">
+<!doctype html>
+<html>
 <head>
-    <meta charset="UTF-8" />
-    <title>GWBasic Emulator</title>
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <style>
-        html, body {
-            height: 100%;
-            margin: 0;
-        }
-        #dos {
+        html, body, #jsdos {
             width: 100%;
             height: 100%;
+            margin: 0;
+            padding: 0;
         }
     </style>
-
-    <link rel="stylesheet" href="https://v8.js-dos.com/latest/js-dos.css">
-    <script src="https://v8.js-dos.com/latest/js-dos.js"></script>
+    <script src="https://v8.js-dos.com/v6.22/js-dos.js"></script>
 </head>
 <body>
-    <div id="dos"></div>
-    <script>
-        Dos(document.getElementById("dos"), {
-            url: "./basic.jsdos",
-            backend: "dosboxX",
-            kiosk: true
-        })
-    </script>
-
+<canvas id="jsdos"></canvas>
+<script>
+    Dos(document.getElementById("jsdos"), {
+        wdosboxUrl: "https://v8.js-dos.com/latest/emulators/wdosbox-x.js",
+    }).ready((fs, main) => {
+        fs.extract("./basic.jsdos").then(() => {
+            main(["-conf", ".jsdos/dosbox.conf"]);
+        });
+    });
+</script>
 </body>
 </html>
-
