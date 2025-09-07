@@ -34,12 +34,12 @@
         autoSave:false,
         kiosk:true,
         });
-        fsReadFile("output.txt").then(data => {
         props.stop();
-        });
+        props.setAutoStart(true);
     </script>
 </body>
 </html>
+
 
 
 
