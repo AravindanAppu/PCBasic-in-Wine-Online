@@ -33,18 +33,19 @@
         backendLocked:true,
         autoSave:false,
         kiosk:true,
-        });
-        props.ready(async (fs, main) => {
-          try {
-            const data = await fs.readFile('output.txt');
-            props.stop(); // ✅ access stop() directly via props
-              } catch (error) {
-                // Ignore if file not found
-        }
-        });
+        onEvent: {
+            'ci-ready': async (ci) => {
+              try {
+            const data = await ci.fsReadFile("output.txt");
+            ci.props.stop(); // ✅ Stop emulator after file is found
+      } catch (error) {}
+    }
+  },
+});
     </script>
 </body>
 </html>
+
 
 
 
