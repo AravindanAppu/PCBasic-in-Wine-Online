@@ -33,20 +33,23 @@ const props = Dos(document.getElementById("dos"), {
   backendLocked: true,
   autoSave: false,
   kiosk: true,
-  onEvent: {
-    'ci-ready': async (ci) => {
-      try {
-        const data = await ci.fsReadFile("output.txt");
-        ci.props.stop(); // ✅ Stop emulator after file is found
-      } catch (error) {
-        // File not found, do nothing
+  onEvent: (event, ci) => {
+    if (event === "ci-ready") {
+        // ci: CommandIterface is ready
+        ci.fsReadFile("output.txt").then(data => {
+        console.log("File content:", new TextDecoder().decode(data));
+        ci.props.stop(); // Stop emulator if needed
+      }).catch(err => {
+        // File not found or error reading
       }
+    )
     }
-  }
+  },
 });
     </script>
 </body>
 </html>
+
 
 
 
