@@ -33,22 +33,29 @@ const props = Dos(document.getElementById("dos"), {
   backendLocked: true,
   autoSave: false,
   kiosk: true,
-  onEvent: (event, ci) => {
-    if (event === "ci-ready") {
-        // ci: CommandIterface is ready
-        ci.fsReadFile("output.txt").then(data => {
-        console.log("File content:", new TextDecoder().decode(data));
-        ci.props.stop(); // Stop emulator if needed
-      }).catch(err => {
-        console.error("File not found or error:", error);
-      }
-    )
-    }
-  },
+      onEvent: (event, ci) => {
+        if (event === "ci-ready") {
+          console.log("Emulator ready. GW-BASIC should be running.");
+
+          // Periodically check if 'output.txt' exists
+          const interval = setInterval(() => {
+            ci.fsReadFile("output.txt")
+              .then(data => {
+                console.log("output.txt found! Stopping emulator...");
+                clearInterval(interval); // Stop checking
+                ci.props.stop(); // Stop emulator
+              })
+              .catch(err => {
+                // File not found yet, keep waiting
+              });
+          }, 1000); // Check every 1 second
+        }
+      },
 });
     </script>
 </body>
 </html>
+
 
 
 
