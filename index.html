@@ -33,12 +33,21 @@
         backendLocked:true,
         autoSave:false,
         kiosk:true,
+        onEvent: {
+            'ci-ready': async (ci) => {
+                  try {
+                  const fileData = await ci.fsReadFile('output.txt');
+                  props.stop(); // Stop the emulator if the file is found
+      } 
+    }
+  }
         });
         props.setAutoStart(true);
         props.stop();
     </script>
 </body>
 </html>
+
 
 
 
