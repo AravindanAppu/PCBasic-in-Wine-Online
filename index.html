@@ -40,7 +40,7 @@ const props = Dos(document.getElementById("dos"), {
         console.log("File content:", new TextDecoder().decode(data));
         ci.props.stop(); // Stop emulator if needed
       }).catch(err => {
-        // File not found or error reading
+        console.error("File not found or error:", error);
       }
     )
     }
@@ -49,6 +49,7 @@ const props = Dos(document.getElementById("dos"), {
     </script>
 </body>
 </html>
+
 
 
 
