@@ -26,22 +26,31 @@
     <div id="dos" style="width: 100%; height: 100%"></div>
 
     <script>
-function deleteItem(event) {
-  // retrieve the name of the task we want to delete
-  let dataTask = event.target.getAttribute("aravindanappu.github.io");
+function deleteJSDOSDatabase(dbName = "aravindanappu.github.io") {
+    if (!window.indexedDB) {
+        console.error("IndexedDB is not supported in this browser.");
+        return;
+    }
 
-  // open a database transaction and delete the task, finding it by the name we retrieved above
-  let transaction = db.transaction(["toDoList"], "readwrite");
-  let request = transaction.objectStore("toDoList").delete(dataTask);
+    const deleteRequest = indexedDB.deleteDatabase(dbName);
 
-  // report that the data item has been deleted
-  transaction.oncomplete = () => {
-    // delete the parent of the button, which is the list item, so it no longer is displayed
-    event.target.parentNode.parentNode.removeChild(event.target.parentNode);
-    note.appendChild(document.createElement("li")).textContent =
-      `Task "${dataTask}" deleted.`;
-  };
+    deleteRequest.onerror = function(event) {
+        console.error("Error deleting database:", event);
+    };
+
+    deleteRequest.onsuccess = function(event) {
+        console.log(`Database '${dbName}' deleted successfully.`);
+    };
+
+    deleteRequest.onblocked = function() {
+        console.warn(`Delete blocked. Please close other tabs using '${dbName}'.`);
+    };
 }
+
+// Call it with the correct database name:
+deleteJSDOSDatabase("aravindanappu.github.io");
+// or "js-dos-v2" depending on what you find in your browser.
+
 const props = Dos(document.getElementById("dos"), {
   url: "./basic.jsdos",
   dosboxConf: "./dosbox.conf",
@@ -71,6 +80,7 @@ const props = Dos(document.getElementById("dos"), {
     </script>
 </body>
 </html>
+
 
 
 
