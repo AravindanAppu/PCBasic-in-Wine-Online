@@ -87,24 +87,9 @@
 </head>
 <body>
 
-  <!-- Emulator container -->
   <div id="dos-root"></div>
 
-  <!-- Virtual keyboard -->
   <div id="keyboard-container">
-    <div class="key-row">
-      <div class="key" data-key="112">F1</div>
-      <div class="key" data-key="113">F2</div>
-      <div class="key" data-key="114">F3</div>
-      <div class="key" data-key="115">F4</div>
-      <div class="key" data-key="116">F5</div>
-      <div class="key" data-key="117">F6</div>
-      <div class="key" data-key="118">F7</div>
-      <div class="key" data-key="119">F8</div>
-      <div class="key" data-key="120">F9</div>
-      <div class="key" data-key="121">F10</div>
-    </div>
-
     <div class="key-row">
       <div class="key" data-key="49">1</div>
       <div class="key" data-key="50">2</div>
@@ -157,14 +142,15 @@
     </div>
 
     <div class="key-row">
-      <div class="key special" data-key="17">Ctrl</div>
+      <div class="key" data-key="190">.</div>
+      <div class="key" data-key="188">,</div>
+      <div class="key" data-key="222">"</div>
+      <div class="key" data-key="189">%</div>
       <div class="key wide" data-key="32">Space</div>
-      <div class="key special" data-key="18">Alt</div>
     </div>
   </div>
 
   <script>
-    // Initialize emulator with provided configuration
     const dos = Dos(document.getElementById("dos-root"), {
       url: "./basic.jsdos",
       backend: "dosboxX",
@@ -175,7 +161,9 @@
     });
 
     let shiftActive = false;
-    let ctrlActive = false;
+    let lastKey = null;
+    let lastTime = 0;
+    const DOUBLE_PRESS_THRESHOLD = 300; // milliseconds
 
     const keyboard = document.getElementById("keyboard-container");
 
@@ -190,32 +178,36 @@
     });
 
     function handleKey(keyCode, keyElem) {
+      const currentTime = Date.now();
+
       if (keyCode === 16) { // Shift
         shiftActive = !shiftActive;
-        toggleKeyClass(keyElem, shiftActive);
-        return;
-      }
-      if (keyCode === 17) { // Ctrl
-        ctrlActive = !ctrlActive;
-        toggleKeyClass(keyElem, ctrlActive);
+        keyElem.classList.toggle("shift-active", shiftActive);
+        vibrate();
         return;
       }
 
-      simulateKeyEvent(keyCode, true);
-      simulateKeyEvent(keyCode, false);
+      vibrate();
+
+      // Check for double press
+      if (lastKey === keyCode && (currentTime - lastTime < DOUBLE_PRESS_THRESHOLD)) {
+        sendKey(keyCode);
+      }
+
+      sendKey(keyCode);
+
+      lastKey = keyCode;
+      lastTime = currentTime;
 
       if (shiftActive) {
         shiftActive = false;
         document.querySelectorAll(".key[data-key='16']").forEach(k => k.classList.remove("shift-active"));
       }
-      if (ctrlActive) {
-        ctrlActive = false;
-        document.querySelectorAll(".key[data-key='17']").forEach(k => k.classList.remove("shift-active"));
-      }
     }
 
-    function toggleKeyClass(keyElem, active) {
-      keyElem.classList.toggle("shift-active", active);
+    function sendKey(keyCode) {
+      simulateKeyEvent(keyCode, true);
+      simulateKeyEvent(keyCode, false);
     }
 
     function simulateKeyEvent(keyCode, pressed) {
@@ -227,6 +219,12 @@
         cancelable: true
       });
       document.dispatchEvent(event);
+    }
+
+    function vibrate() {
+      if (navigator.vibrate) {
+        navigator.vibrate(20);
+      }
     }
   </script>
 
