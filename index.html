@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>GWBasic</title>
+  <title>JS-DOS Keyboard with F1–F10</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <link rel="stylesheet" href="https://v8.js-dos.com/latest/js-dos.css" />
   <script src="https://v8.js-dos.com/latest/js-dos.js"></script>
@@ -14,27 +14,22 @@
       height: 100%;
       overflow: hidden;
       background: black;
-      display: flex;
-      flex-direction: column;
       font-family: 'Courier New', monospace;
     }
-
     #dos-root {
       width: 100%;
       flex: 1 1 auto;
       border-bottom: 2px solid #444;
     }
-
     #keyboard-container {
       width: 100%;
       background: #222;
       display: flex;
       flex-direction: column;
       align-items: center;
-      box-sizing: border-box;
       padding: 4px 0;
+      box-sizing: border-box;
     }
-
     .key-row {
       display: flex;
       justify-content: center;
@@ -42,7 +37,6 @@
       width: 100%;
       padding: 2px 0;
     }
-
     .key {
       background: #444;
       color: white;
@@ -55,28 +49,37 @@
       flex: 1 0 auto;
       min-width: 30px;
     }
-
     .key:hover {
       background: #666;
     }
-
     .key:active {
       background: #888;
       transform: translateY(1px);
     }
-
     .key.wide {
       flex: 2 0 auto;
     }
-
     .key.special {
       background: #5a3c1c;
     }
-
     .key.shift-active {
       background: #c96 !important;
     }
-
+    #download-btn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background-color: #444;
+      color: white;
+      border: none;
+      padding: 10px;
+      border-radius: 5px;
+      cursor: pointer;
+      z-index: 100;
+    }
+    #download-btn:hover {
+      background-color: #666;
+    }
     @media (max-width: 600px) {
       .key {
         font-size: 0.9em;
@@ -87,10 +90,12 @@
 </head>
 <body>
 
+  <button id="download-btn">Download output.txt</button>
+
   <div id="dos-root"></div>
 
   <div id="keyboard-container">
-    <!-- Function keys row -->
+    <!-- Function keys -->
     <div class="key-row">
       <div class="key" data-key="112">F1</div>
       <div class="key" data-key="113">F2</div>
@@ -104,6 +109,7 @@
       <div class="key" data-key="121">F10</div>
     </div>
 
+    <!-- Number row -->
     <div class="key-row">
       <div class="key" data-key="49">1</div>
       <div class="key" data-key="50">2</div>
@@ -117,6 +123,7 @@
       <div class="key" data-key="48">0</div>
     </div>
 
+    <!-- QWERTY row -->
     <div class="key-row">
       <div class="key" data-key="81">Q</div>
       <div class="key" data-key="87">W</div>
@@ -130,6 +137,7 @@
       <div class="key" data-key="80">P</div>
     </div>
 
+    <!-- Home row -->
     <div class="key-row">
       <div class="key wide" data-key="65">A</div>
       <div class="key" data-key="83">S</div>
@@ -143,6 +151,7 @@
       <div class="key wide special" data-key="13">⏎</div>
     </div>
 
+    <!-- Bottom row -->
     <div class="key-row">
       <div class="key wide special" data-key="16">⇧</div>
       <div class="key" data-key="90">Z</div>
@@ -155,12 +164,13 @@
       <div class="key wide special" data-key="8">⌫</div>
     </div>
 
+    <!-- Symbol row -->
     <div class="key-row">
       <div class="key" data-key="190">.</div>
       <div class="key" data-key="188">,</div>
-      <div class="key" data-key="222">"</div>
-      <div class="key" data-key="189">%</div>
       <div class="key wide" data-key="32">Space</div>
+      <div class="key" data-key="186">;</div>
+      <div class="key" data-key="222">"</div>
     </div>
   </div>
 
@@ -174,10 +184,26 @@
       kiosk: true,
     });
 
+    const downloadBtn = document.getElementById("download-btn");
+
+    downloadBtn.addEventListener("click", () => {
+      const fileContent = dos.fs.readFile('output.txt');
+      if (fileContent === undefined) {
+        alert("output.txt not found.");
+        return;
+      }
+      const blob = new Blob([fileContent], { type: 'text/plain' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = 'output.txt';
+      link.click();
+    });
+
     let shiftActive = false;
     let lastKey = null;
     let lastTime = 0;
     const DOUBLE_PRESS_THRESHOLD = 300; // ms
+    let doubleTapHandled = false;
 
     const keyboard = document.getElementById("keyboard-container");
 
@@ -194,7 +220,7 @@
     function handleKey(keyCode, keyElem) {
       const currentTime = Date.now();
 
-      if (keyCode === 16) { // Shift
+      if (keyCode === 16) { // Shift key
         shiftActive = !shiftActive;
         keyElem.classList.toggle("shift-active", shiftActive);
         vibrate();
@@ -203,11 +229,13 @@
 
       vibrate();
 
-      if (lastKey === keyCode && (currentTime - lastTime < DOUBLE_PRESS_THRESHOLD)) {
+      if (lastKey === keyCode && (currentTime - lastTime < DOUBLE_PRESS_THRESHOLD) && !doubleTapHandled) {
         sendKey(keyCode);
+        doubleTapHandled = true;
+      } else {
+        sendKey(keyCode);
+        doubleTapHandled = false;
       }
-
-      sendKey(keyCode);
 
       lastKey = keyCode;
       lastTime = currentTime;
@@ -240,6 +268,5 @@
       }
     }
   </script>
-
 </body>
 </html>
