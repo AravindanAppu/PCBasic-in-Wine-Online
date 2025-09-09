@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>JS-DOS with Android-style Keyboard</title>
+  <title>GWBasic</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <link rel="stylesheet" href="https://v8.js-dos.com/latest/js-dos.css" />
   <script src="https://v8.js-dos.com/latest/js-dos.js"></script>
@@ -14,6 +14,8 @@
       height: 100%;
       overflow: hidden;
       background: black;
+      display: flex;
+      flex-direction: column;
       font-family: 'Courier New', monospace;
     }
 
@@ -85,8 +87,10 @@
 </head>
 <body>
 
+  <!-- Emulator container -->
   <div id="dos-root"></div>
 
+  <!-- Virtual keyboard -->
   <div id="keyboard-container">
     <div class="key-row">
       <div class="key" data-key="112">F1</div>
@@ -162,15 +166,15 @@
   </div>
 
   <script>
-Dos(document.getElementById("dos-root"), {
-            url: "./basic.jsdos",
-            backend:"dosboxX",
-            backendLocked: false,
-            autoStart: true,
-            autoSave: false,
-            kiosk: true,
-        });
-
+    // Initialize emulator with provided configuration
+    const dos = Dos(document.getElementById("dos-root"), {
+      url: "./basic.jsdos",
+      backend: "dosboxX",
+      backendLocked: false,
+      autoStart: true,
+      autoSave: false,
+      kiosk: true,
+    });
 
     let shiftActive = false;
     let ctrlActive = false;
