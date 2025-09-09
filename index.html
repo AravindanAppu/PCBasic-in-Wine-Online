@@ -90,6 +90,20 @@
   <div id="dos-root"></div>
 
   <div id="keyboard-container">
+    <!-- Function keys row -->
+    <div class="key-row">
+      <div class="key" data-key="112">F1</div>
+      <div class="key" data-key="113">F2</div>
+      <div class="key" data-key="114">F3</div>
+      <div class="key" data-key="115">F4</div>
+      <div class="key" data-key="116">F5</div>
+      <div class="key" data-key="117">F6</div>
+      <div class="key" data-key="118">F7</div>
+      <div class="key" data-key="119">F8</div>
+      <div class="key" data-key="120">F9</div>
+      <div class="key" data-key="121">F10</div>
+    </div>
+
     <div class="key-row">
       <div class="key" data-key="49">1</div>
       <div class="key" data-key="50">2</div>
@@ -163,7 +177,7 @@
     let shiftActive = false;
     let lastKey = null;
     let lastTime = 0;
-    const DOUBLE_PRESS_THRESHOLD = 300; // milliseconds
+    const DOUBLE_PRESS_THRESHOLD = 300; // ms
 
     const keyboard = document.getElementById("keyboard-container");
 
@@ -189,7 +203,6 @@
 
       vibrate();
 
-      // Check for double press
       if (lastKey === keyCode && (currentTime - lastTime < DOUBLE_PRESS_THRESHOLD)) {
         sendKey(keyCode);
       }
