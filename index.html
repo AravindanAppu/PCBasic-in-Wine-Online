@@ -154,68 +154,82 @@
     </div>
   </div>
 
-  <script>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    let shiftActive = false;
+    let ci;
+
     Dos(document.getElementById("dos-root"), {
-      url: "./basic.jsdos",
-      backend: "dosboxX",
-      backendLocked: true,
-      autoSave: false,
-      kiosk: true,
-      autoStart: true,
-});
+        url: "./basic.jsdos",
+        backend: "dosboxX",
+        backendLocked: true,
+        autoSave: false,
+        kiosk: true,
+        autoStart: true,
+    }).then(instance => {
+        ci = instance;
+    });
 
     function simulateKeyEvent(keyCode, pressed) {
-      const eventType = pressed ? "keydown" : "keyup";
-      const event = document.createEvent("KeyboardEvent");
-      if (event.initKeyboardEvent) {
-        event.initKeyboardEvent(eventType, true, true, window, false, false, false, false, keyCode, 0);
-      } else {
-        event.initKeyEvent(eventType, true, true, window, false, false, false, false, keyCode, 0);
-      }
-      Object.defineProperty(event, "keyCode", { get: () => keyCode });
-      Object.defineProperty(event, "which", { get: () => keyCode });
-      document.dispatchEvent(event);
+        const eventType = pressed ? "keydown" : "keyup";
+        const event = document.createEvent("KeyboardEvent");
+        if (event.initKeyboardEvent) {
+            event.initKeyboardEvent(eventType, true, true, window, false, false, false, false, keyCode, 0);
+        } else {
+            event.initKeyEvent(eventType, true, true, window, false, false, false, false, keyCode, 0);
+        }
+        Object.defineProperty(event, "keyCode", { get: () => keyCode });
+        Object.defineProperty(event, "which", { get: () => keyCode });
+        document.dispatchEvent(event);
     }
 
     function toggleShift() {
-      shiftActive = !shiftActive;
-      document.getElementById("shift-key").classList.toggle("shift-active", shiftActive);
+        shiftActive = !shiftActive;
+        const shiftKey = document.getElementById("shift-key");
+        if (shiftKey) {
+            shiftKey.classList.toggle("shift-active", shiftActive);
+        }
     }
 
     function pressKey(code) {
-      if (shiftActive) {
-        const shiftedMap = {
-          49:33,50:64,51:35,52:36,53:37,54:94,55:38,56:42,57:40,48:41,
-          186:58,222:34,188:60,190:62,191:63,189:95,187:43
-        };
-        if (code >= 65 && code <= 90) {
-          simulateKeyEvent(code,true);
-          simulateKeyEvent(code,false);
-        } else if (shiftedMap[code]) {
-          simulateKeyEvent(shiftedMap[code],true);
-          simulateKeyEvent(shiftedMap[code],false);
+        if (shiftActive) {
+            const shiftedMap = {
+                49:33,50:64,51:35,52:36,53:37,54:94,55:38,56:42,57:40,48:41,
+                186:58,222:34,188:60,190:62,191:63,189:95,187:43
+            };
+            if (code >= 65 && code <= 90) {
+                simulateKeyEvent(code,true);
+                simulateKeyEvent(code,false);
+            } else if (shiftedMap[code]) {
+                simulateKeyEvent(shiftedMap[code],true);
+                simulateKeyEvent(shiftedMap[code],false);
+            } else {
+                simulateKeyEvent(code,true);
+                simulateKeyEvent(code,false);
+            }
+            shiftActive = false;
+            const shiftKey = document.getElementById("shift-key");
+            if (shiftKey) {
+                shiftKey.classList.remove("shift-active");
+            }
         } else {
-          simulateKeyEvent(code,true);
-          simulateKeyEvent(code,false);
+            simulateKeyEvent(code,true);
+            simulateKeyEvent(code,false);
         }
-        shiftActive=false;
-        document.getElementById("shift-key").classList.remove("shift-active");
-      } else {
-        simulateKeyEvent(code,true);
-        simulateKeyEvent(code,false);
-      }
-      if (navigator.vibrate) navigator.vibrate(20);
+        if (navigator.vibrate) navigator.vibrate(20);
     }
 
     // Safe audio context fix
     ["click","touchstart"].forEach(evt => {
-      document.addEventListener(evt, () => {
-        if (ci && ci.audioContext && ci.audioContext.state === "suspended") {
-          ci.audioContext.resume();
-        }
-      }, { once:true });
+        document.addEventListener(evt, () => {
+            if (ci && ci.audioContext && ci.audioContext.state === "suspended") {
+                ci.audioContext.resume();
+            }
+        }, { once:true });
     });
-  </script>
+});
+</script>
 </body>
 </html>
+
 
