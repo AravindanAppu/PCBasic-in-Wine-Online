@@ -17,14 +17,11 @@
   .key.wide { flex:2 0 auto; }
   .key.special { background:#5a3c1c; }
   .key.shift-active { background:#c96 !important; }
-  #download-btn { position:absolute; top:10px; right:10px; background:#444; color:white; border:none; padding:10px; border-radius:5px; cursor:pointer; z-index:20; }
-  #download-btn:hover { background:#666; }
   @media(max-width:600px){ .key{font-size:0.9em; padding:8px;} }
 </style>
 </head>
 <body>
 
-<button id="download-btn">Download output.txt</button>
 <div id="dos-root"></div>
 
 <div id="keyboard-container">
@@ -117,17 +114,6 @@ const dos = Dos(document.getElementById("dos-root"), {
   kiosk:true,
 });
 
-const downloadBtn = document.getElementById("download-btn");
-downloadBtn.addEventListener("click", () => {
-  const fileContent = dos.fs.readFile('output.txt');
-  if(!fileContent){ alert("output.txt not found."); return; }
-  const blob = new Blob([fileContent], {type:'text/plain'});
-  const link = document.createElement('a');
-  link.href = URL.createObjectURL(blob);
-  link.download='output.txt';
-  link.click();
-});
-
 let shiftActive=false, lastKey=null, lastTime=0;
 const DOUBLE_PRESS_THRESHOLD=300;
 let doubleTapHandled=false;
@@ -143,7 +129,7 @@ keyboard.addEventListener("click", event=>{
 
 function handleKey(keyCode,keyElem){
   const currentTime=Date.now();
-  if(keyCode===16){
+  if(keyCode===16){ // Shift
     shiftActive=!shiftActive;
     keyElem.classList.toggle("shift-active",shiftActive);
     vibrate();
