@@ -18,7 +18,7 @@
       font-family: 'Courier New', monospace;
     }
 
-    #dos {
+    #dos-root {
       width: 100%;
       flex: 1 1 auto;
       border-bottom: 2px solid #444;
@@ -156,7 +156,7 @@
 
   <script>
     // Initialize emulator
-Dos(document.getElementById("dos"), {
+Dos(document.getElementById("dos-root"), {
             url: "./basic.jsdos",
             backend:"dosboxX",
             backendLocked: false,
@@ -223,5 +223,6 @@ Dos(document.getElementById("dos"), {
 
 </body>
 </html>
+
 
 
