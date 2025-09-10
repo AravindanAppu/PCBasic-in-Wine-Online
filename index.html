@@ -149,6 +149,12 @@ const dos = Dos(document.getElementById("dos-root"), {
   autoStart: true,
   autoSave: false,
   kiosk: true,
+  onEvent: (event, ci) => {
+    if (event === "ci-ready") {
+      console.log("DOS ready, starting file polling...");
+      pollForFile(ci);
+    }
+  },
 });
 
 let shiftActive = false;
@@ -222,15 +228,6 @@ function vibrate() {
 }
 
 // ======== File Download Logic ========
-Dos(document.getElementById("download-btn"), {
-  onEvent: (event, ci) => {
-        if (event === "ci-ready") {
-    console.log("DOS ready, starting file polling...");
-    pollForFile(ci);
-  }
-    },
-});
-
 function pollForFile(ci, interval = 2000) {
   const timer = setInterval(() => {
     ci.fsReadFile("Output.txt").then(data => {
