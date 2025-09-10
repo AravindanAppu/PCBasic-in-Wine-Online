@@ -227,6 +227,11 @@ function vibrate() {
   if (navigator.vibrate) navigator.vibrate(20);
 }
 
+ ci.fsList("/").then(files => {
+  console.log("Files in root directory:", files);
+}).catch(err => {
+  console.error("Error listing files:", err);
+}); 
 // ======== File Download Logic ========
 function pollForFile(ci, interval = 2000) {
   const timer = setInterval(() => {
