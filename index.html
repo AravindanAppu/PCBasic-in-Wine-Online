@@ -2,11 +2,12 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8" />
-    <title>js-dos fsWriteFile and Download Example</title>
+    <title>js-dos v8 fsReadFile Example</title>
+    <link rel="stylesheet" href="https://v8.js-dos.com/latest/js-dos.css" />
     <script src="https://v8.js-dos.com/latest/js-dos.js"></script>
 </head>
 <body>
-    <h2>js-dos File Write, Read, and Download Example</h2>
+    <h2>js-dos v8 File Write and Download</h2>
     <button id="download-btn" disabled>Download File</button>
     <div id="dosbox" style="width: 640px; height: 400px;"></div>
 
@@ -14,16 +15,17 @@
         const downloadBtn = document.getElementById("download-btn");
 
         Dos(document.getElementById("dosbox"), {
-            url: "https://v8.js-dos.com/latest/js-dos.js",
+            url: "./basic.jsdos", // example bundle
             onEvent: (event, ci) => {
                 if (event === "ci-ready") {
-                    // Write the file using fsWriteFile
-                    const fileData = new TextEncoder().encode("Hello from js-dos!");
-                    ci.fsWriteFile("/example.txt", fileData).then(() => {
-                        console.log("File written successfully.");
-                        downloadBtn.disabled = false;
+                    console.log("Command Interface Ready");
 
-                        // Setup download button click event
+                    // Write a file using fsWriteFile
+                    const fileContent = new TextEncoder().encode("Hello from js-dos v8!");
+                    ci.fsWriteFile("/example.txt", fileContent).then(() => {
+                        console.log("File written.");
+
+                        downloadBtn.disabled = false;
                         downloadBtn.addEventListener("click", () => {
                             ci.fsReadFile("/example.txt").then((data) => {
                                 const blob = new Blob([data], { type: "text/plain" });
@@ -36,12 +38,12 @@
                                 a.click();
                                 document.body.removeChild(a);
                                 URL.revokeObjectURL(url);
-                            }).catch((error) => {
-                                console.error("Error reading file:", error);
+                            }).catch((err) => {
+                                console.error("Read error:", err);
                             });
                         });
-                    }).catch((error) => {
-                        console.error("Error writing file:", error);
+                    }).catch((err) => {
+                        console.error("Write error:", err);
                     });
                 }
             }
