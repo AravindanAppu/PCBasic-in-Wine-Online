@@ -232,6 +232,13 @@ function simulateKeyEvent(keyCode, pressed) {
   document.dispatchEvent(event);
 }
 
+  function printTree(node, indent) {
+  console.log(indent + node.name);
+  if (node.type === "directory" && node.children) {
+    node.children.forEach(child => printTree(child, indent + "  "));
+  }
+}
+
 function vibrate() {
   if (navigator.vibrate) navigator.vibrate(20);
 }
