@@ -1,53 +1,264 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
-    <title>js-dos v8 fsReadFile Example</title>
-    <link rel="stylesheet" href="https://v8.js-dos.com/latest/js-dos.css" />
-    <script src="https://v8.js-dos.com/latest/js-dos.js"></script>
+<meta charset="UTF-8">
+<title>GWBasic with File Download</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<link rel="stylesheet" href="https://v8.js-dos.com/latest/js-dos.css">
+<script src="https://v8.js-dos.com/latest/js-dos.js"></script>
+<style>
+  html, body { margin:0; padding:0; width:100%; height:100%; background:black; overflow:hidden; font-family:'Courier New', monospace; display:flex; flex-direction:column; }
+  #dos-root { flex:1; border-bottom:2px solid #444; width:100%; }
+  #keyboard-container {
+    width:100%;
+    background:#222;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    padding:4px 0;
+    box-sizing:border-box;
+  }
+  .key-row {
+    display:flex;
+    justify-content:center;
+    gap:4px;
+    width:100%;
+    padding:2px 0;
+  }
+  .key {
+    background:#444;
+    color:white;
+    font-size:1em;
+    padding:10px;
+    border-radius:6px;
+    cursor:pointer;
+    user-select:none;
+    text-align:center;
+    flex:1 0 auto;
+    min-width:30px;
+  }
+  .key:hover { background:#666; }
+  .key:active { background:#888; transform:translateY(1px); }
+  .key.wide { flex:2 0 auto; }
+  .key.special { background:#5a3c1c; }
+  .key.shift-active { background:#c96 !important; }
+  #download-btn {
+    background:#444;
+    color:white;
+    font-size:1em;
+    padding:10px 20px;
+    border:none;
+    border-radius:6px;
+    cursor:pointer;
+    margin:5px;
+  }
+  #download-btn:disabled {
+    background:#333;
+    color:#777;
+    cursor:default;
+  }
+  @media(max-width:600px){ .key{font-size:0.9em; padding:8px;} }
+</style>
 </head>
 <body>
-    <h2>js-dos v8 File Write and Download</h2>
-    <button id="download-btn" disabled>Download File</button>
-    <div id="dosbox" style="width: 640px; height: 400px;"></div>
 
-    <script>
-        const downloadBtn = document.getElementById("download-btn");
+<div id="dos-root"></div>
+<button id="download-btn" disabled>Download Output.txt</button>
 
-        Dos(document.getElementById("dosbox"), {
-            url: "./basic.jsdos", // example bundle
-            onEvent: (event, ci) => {
-                if (event === "ci-ready") {
-                    console.log("Command Interface Ready");
+<div id="keyboard-container">
+  <!-- Keyboard rows omitted for brevity: same as provided earlier -->
+  <!-- Function keys -->
+  <div class="key-row">
+    <div class="key" data-key="112">F1</div>
+    <div class="key" data-key="113">F2</div>
+    <div class="key" data-key="114">F3</div>
+    <div class="key" data-key="115">F4</div>
+    <div class="key" data-key="116">F5</div>
+    <div class="key" data-key="117">F6</div>
+    <div class="key" data-key="118">F7</div>
+    <div class="key" data-key="119">F8</div>
+    <div class="key" data-key="120">F9</div>
+    <div class="key" data-key="121">F10</div>
+  </div>
+  <!-- Number row -->
+  <div class="key-row">
+    <div class="key" data-key="49">1</div>
+    <div class="key" data-key="50">2</div>
+    <div class="key" data-key="51">3</div>
+    <div class="key" data-key="52">4</div>
+    <div class="key" data-key="53">5</div>
+    <div class="key" data-key="54">6</div>
+    <div class="key" data-key="55">7</div>
+    <div class="key" data-key="56">8</div>
+    <div class="key" data-key="57">9</div>
+    <div class="key" data-key="48">0</div>
+  </div>
+  <!-- QWERTY row -->
+  <div class="key-row">
+    <div class="key" data-key="81">Q</div>
+    <div class="key" data-key="87">W</div>
+    <div class="key" data-key="69">E</div>
+    <div class="key" data-key="82">R</div>
+    <div class="key" data-key="84">T</div>
+    <div class="key" data-key="89">Y</div>
+    <div class="key" data-key="85">U</div>
+    <div class="key" data-key="73">I</div>
+    <div class="key" data-key="79">O</div>
+    <div class="key" data-key="80">P</div>
+  </div>
+  <!-- Home row -->
+  <div class="key-row">
+    <div class="key wide" data-key="65">A</div>
+    <div class="key" data-key="83">S</div>
+    <div class="key" data-key="68">D</div>
+    <div class="key" data-key="70">F</div>
+    <div class="key" data-key="71">G</div>
+    <div class="key" data-key="72">H</div>
+    <div class="key" data-key="74">J</div>
+    <div class="key" data-key="75">K</div>
+    <div class="key" data-key="76">L</div>
+    <div class="key wide special" data-key="13">⏎</div>
+  </div>
+  <!-- Bottom row -->
+  <div class="key-row">
+    <div class="key wide special" data-key="16">⇧</div>
+    <div class="key" data-key="90">Z</div>
+    <div class="key" data-key="88">X</div>
+    <div class="key" data-key="67">C</div>
+    <div class="key" data-key="86">V</div>
+    <div class="key" data-key="66">B</div>
+    <div class="key" data-key="78">N</div>
+    <div class="key" data-key="77">M</div>
+    <div class="key wide special" data-key="8">⌫</div>
+  </div>
+  <!-- Symbol & space row -->
+  <div class="key-row">
+    <div class="key" data-key="190">.</div>
+    <div class="key" data-key="188">,</div>
+    <div class="key wide" data-key="32">Space</div>
+    <div class="key" data-key="186">;</div>
+    <div class="key" data-key="222">"</div>
+  </div>
+</div>
 
-                    // Write a file using fsWriteFile
-                    const fileContent = new TextEncoder().encode("Hello from js-dos v8!");
-                    ci.fsWriteFile("/example.txt", fileContent).then(() => {
-                        console.log("File written.");
+<script>
+const dos = Dos(document.getElementById("dos-root"), {
+  url: "./basic.jsdos", // Adjust to your actual bundle location
+  backend: "dosboxX",
+  backendLocked: false,
+  autoStart: true,
+  autoSave: false,
+  kiosk: true,
+});
 
-                        downloadBtn.disabled = false;
-                        downloadBtn.addEventListener("click", () => {
-                            ci.fsReadFile("/example.txt").then((data) => {
-                                const blob = new Blob([data], { type: "text/plain" });
-                                const url = URL.createObjectURL(blob);
+let shiftActive = false;
+let shiftLocked = false;
+let lastShiftTap = 0;
+const DOUBLE_TAP_THRESHOLD = 300;
 
-                                const a = document.createElement("a");
-                                a.href = url;
-                                a.download = "example.txt";
-                                document.body.appendChild(a);
-                                a.click();
-                                document.body.removeChild(a);
-                                URL.revokeObjectURL(url);
-                            }).catch((err) => {
-                                console.error("Read error:", err);
-                            });
-                        });
-                    }).catch((err) => {
-                        console.error("Write error:", err);
-                    });
-                }
-            }
-        });
-    </script>
+const keyboard = document.getElementById("keyboard-container");
+keyboard.addEventListener("click", event => {
+  const keyElem = event.target.closest(".key");
+  if (!keyElem) return;
+  const keyCode = parseInt(keyElem.getAttribute("data-key"));
+  if (isNaN(keyCode)) return;
+
+  if (keyCode === 16) {
+    handleShift(keyElem);
+  } else {
+    handleKey(keyCode);
+  }
+});
+
+function handleShift(keyElem) {
+  const now = Date.now();
+  if (now - lastShiftTap < DOUBLE_TAP_THRESHOLD) {
+    shiftLocked = !shiftLocked;
+    shiftActive = shiftLocked;
+  } else {
+    shiftActive = true;
+  }
+  lastShiftTap = now;
+  updateShiftKey(keyElem);
+  vibrate();
+}
+
+function updateShiftKey(keyElem) {
+  if (shiftLocked || shiftActive) {
+    keyElem.classList.add("shift-active");
+  } else {
+    keyElem.classList.remove("shift-active");
+  }
+}
+
+function handleKey(keyCode) {
+  const shiftElem = document.querySelector(".key[data-key='16']");
+  sendKey(keyCode);
+  vibrate();
+  if (!shiftLocked && shiftActive) {
+    shiftActive = false;
+    updateShiftKey(shiftElem);
+  }
+}
+
+function sendKey(keyCode) {
+  simulateKeyEvent(keyCode, true);
+  simulateKeyEvent(keyCode, false);
+}
+
+function simulateKeyEvent(keyCode, pressed) {
+  const eventType = pressed ? "keydown" : "keyup";
+  const event = new KeyboardEvent(eventType, {
+    keyCode: keyCode,
+    which: keyCode,
+    bubbles: true,
+    cancelable: true
+  });
+  document.dispatchEvent(event);
+}
+
+function vibrate() {
+  if (navigator.vibrate) navigator.vibrate(20);
+}
+
+// ======== File Download Logic ========
+const downloadBtn = document.getElementById("download-btn");
+
+dos.onEvent((event, ci) => {
+  if (event === "ci-ready") {
+    console.log("DOS ready, starting file polling...");
+    pollForFile(ci);
+  }
+});
+
+function pollForFile(ci, interval = 2000) {
+  const timer = setInterval(() => {
+    ci.fsReadFile("Output.txt").then(data => {
+      clearInterval(timer);
+      console.log("Output.txt is now available!");
+      enableDownload(data);
+    }).catch(err => {
+      console.log("Output.txt not found, retrying...");
+    });
+  }, interval);
+}
+
+function enableDownload(data) {
+  downloadBtn.disabled = false;
+  downloadBtn.addEventListener("click", () => {
+    const blob = new Blob([data], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "Output.txt";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  });
+}
+</script>
+
 </body>
 </html>
