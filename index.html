@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <title>js-dos fsWriteFile and Download Example</title>
-    <script src="https://js-dos.com/6.22/current/js-dos.js"></script>
+    <script src="https://v8.js-dos.com/latest/js-dos.js"></script>
 </head>
 <body>
     <h2>js-dos File Write, Read, and Download Example</h2>
@@ -14,8 +14,7 @@
         const downloadBtn = document.getElementById("download-btn");
 
         Dos(document.getElementById("dosbox"), {
-            url: "https://js-dos.com/6.22/current/js-dos.js",
-            wdosboxUrl: "https://js-dos.com/6.22/current/wdosbox.js",
+            url: "https://v8.js-dos.com/latest/js-dos.js",
             onEvent: (event, ci) => {
                 if (event === "ci-ready") {
                     // Write the file using fsWriteFile
