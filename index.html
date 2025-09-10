@@ -222,13 +222,13 @@ function vibrate() {
 }
 
 // ======== File Download Logic ========
-const downloadBtn = document.getElementById("download-btn");
-
-dos.onEvent((event, ci) => {
-  if (event === "ci-ready") {
+const dos = Dos(document.getElementById("download-btn"), {
+  onEvent: (event, ci) => {
+        if (event === "ci-ready") {
     console.log("DOS ready, starting file polling...");
     pollForFile(ci);
   }
+    },
 });
 
 function pollForFile(ci, interval = 2000) {
