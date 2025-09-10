@@ -150,11 +150,20 @@ const dos = Dos(document.getElementById("dos-root"), {
   autoSave: false,
   kiosk: true,
   onEvent: (event, ci) => {
+  //  if (event === "ci-ready") {
+  //   console.log("DOS ready, starting file polling...");
+  //    pollForFile(ci);
+  // }
     if (event === "ci-ready") {
-      console.log("DOS ready, starting file polling...");
-      pollForFile(ci);
-    }
-  },
+    console.log("DOS is ready");
+
+    // List all files and directories
+    ci.fsTree().then(tree => {
+      console.log("Filesystem structure:");
+      printTree(tree, "");
+    }).catch(err => {
+      console.error("Error reading filesystem tree:", err);
+  }}},
 });
 
 let shiftActive = false;
@@ -226,12 +235,6 @@ function simulateKeyEvent(keyCode, pressed) {
 function vibrate() {
   if (navigator.vibrate) navigator.vibrate(20);
 }
-
- ci.fsList("/").then(files => {
-  console.log("Files in root directory:", files);
-}).catch(err => {
-  console.error("Error listing files:", err);
-}); 
 // ======== File Download Logic ========
 function pollForFile(ci, interval = 2000) {
   const timer = setInterval(() => {
