@@ -222,7 +222,7 @@ function vibrate() {
 }
 
 // ======== File Download Logic ========
-const dos = Dos(document.getElementById("download-btn"), {
+Dos(document.getElementById("download-btn"), {
   onEvent: (event, ci) => {
         if (event === "ci-ready") {
     console.log("DOS ready, starting file polling...");
