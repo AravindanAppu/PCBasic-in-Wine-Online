@@ -63,7 +63,7 @@
 <body>
 
 <div id="dos-root"></div>
-<button id="download-btn" disabled>Download Output.txt</button>
+<button id="download-btn" disabled>Download out.txt</button>
 
 <div id="keyboard-container">
   <!-- Keyboard rows omitted for brevity: same as provided earlier -->
@@ -230,12 +230,12 @@ function vibrate() {
 // ======== File Download Logic ========
 function pollForFile(ci, interval = 2000) {
   const timer = setInterval(() => {
-    ci.fsReadFile("/output.txt").then(data => {
+    ci.fsReadFile("/out.txt").then(data => {
       clearInterval(timer);
-      console.log("Output.txt is now available!");
+      console.log("out.txt is now available!");
       enableDownload(data);
     }).catch(err => {
-      console.log("Output.txt not found, retrying...");
+      console.log("out.txt not found, retrying...");
     });
   }, interval);
 }
@@ -248,7 +248,7 @@ function enableDownload(data) {
 
     const a = document.createElement("a");
     a.href = url;
-    a.download = "/output.txt";
+    a.download = "/out.txt";
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
