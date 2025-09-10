@@ -230,7 +230,7 @@ function vibrate() {
 // ======== File Download Logic ========
 function pollForFile(ci, interval = 2000) {
   const timer = setInterval(() => {
-    ci.fsReadFile("Output.txt").then(data => {
+    ci.fsReadFile("./Output.txt").then(data => {
       clearInterval(timer);
       console.log("Output.txt is now available!");
       enableDownload(data);
@@ -248,7 +248,7 @@ function enableDownload(data) {
 
     const a = document.createElement("a");
     a.href = url;
-    a.download = "Output.txt";
+    a.download = "./Output.txt";
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
