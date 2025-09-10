@@ -135,8 +135,12 @@ const dos = Dos(document.getElementById("dos-root"), {
   kiosk:true,
   onEvent: (event, ci) => {
                 if (event === "ci-ready") {
+                  const fileData = new TextEncoder().encode("Hello from js-dos!");
+                    ci.fsWriteFile("/example.txt", fileData).then(() => {
+                        console.log("File written successfully.");
+                        downloadBtn.disabled = false;
                   downloadBtn.addEventListener("click", () => {
-                            ci.fsReadFile("/OUTPUT.TXT").then((data) => {
+                            ci.fsReadFile("/example.txt").then((data) => {
                                 const blob = new Blob([data], { type: "text/plain" });
                                 const url = URL.createObjectURL(blob);
 
@@ -151,6 +155,7 @@ const dos = Dos(document.getElementById("dos-root"), {
                                 console.error("Error reading file:", error);
                             })
                   })
+                }
                 }},
 });
 
