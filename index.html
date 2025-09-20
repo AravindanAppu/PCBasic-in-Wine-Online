@@ -63,7 +63,7 @@
 <body>
 
 <div id="dos-root"></div>
-<button id="download-btn" disabled>Download out.txt</button>
+<button id="downloadBtn" disabled>Download</button>
 
 <div id="keyboard-container">
   <!-- Keyboard rows omitted for brevity: same as provided earlier -->
@@ -143,28 +143,92 @@
 
 <script>
 const dos = Dos(document.getElementById("dos-root"), {
-  url: "./basic.jsdos", // Adjust to your actual bundle location
+  url: "./basic.jsdos",
   backend: "dosboxX",
   backendLocked: false,
   autoStart: true,
   autoSave: false,
   kiosk: true,
-  onEvent: (event, ci) => {
-  //  if (event === "ci-ready") {
-  //   console.log("DOS ready, starting file polling...");
-  //    pollForFile(ci);
-  // }
-    if (event === "ci-ready") {
+  onEvent: async (event, ci) => {
+    if (event !== "ci-ready") return;
     console.log("DOS is ready");
-
-    // List all files and directories
-    ci.fsTree().then(tree => {
-      console.log("Filesystem structure:");
-      printTree(tree, "");
-    }).catch(err => {
-      console.error("Error reading filesystem tree:", err);
-  })}},
+    
+    try {
+        // Create empty output1.txt
+        await ci.fsWriteFile("output1.txt", new TextEncoder().encode(""));
+        
+        // Create autoexec.bat to handle sync
+        const autoexecContent = new TextEncoder().encode(
+            "@echo off\r\n" +
+            "echo Starting GW-BASIC...\r\n" +
+            "gwbasic\r\n" +
+            ":checkloop\r\n" +
+            "if exist output.txt (\r\n" +
+            "  type output.txt > output1.txt\r\n" +
+            "  goto checkloop\r\n" +
+            ")\r\n" +
+            "goto checkloop\r\n"
+        );
+        
+        await ci.fsWriteFile("autoexec.bat", autoexecContent);
+        
+        // Start monitoring
+        startMonitoring(ci);
+    } catch (err) {
+        console.error("Error in setup:", err);
+    }
+},
 });
+
+async function startMonitoring(ci) {
+    let lastSize = 0;
+    let monitoring = true;
+
+    async function checkOutput() {
+        if (!monitoring) return;
+
+        try {
+            const data = await ci.fsReadFile("output1.txt");
+            
+            if (data && data.length > lastSize) {
+                console.log("New content detected, size:", data.length);
+                lastSize = data.length;
+                enableDownload(data);
+            }
+        } catch (err) {
+            console.log("Checking for output...");
+        }
+
+        setTimeout(() => checkOutput(), 1000);
+    }
+
+    checkOutput();
+
+    return () => {
+        monitoring = false;
+    };
+}
+
+function enableDownload(data) {
+  const downloadBtn = document.getElementById("downloadBtn");
+  if (!data || data.length === 0) {
+    downloadBtn.disabled = true;
+    return;
+  }
+  
+  downloadBtn.disabled = false;
+  downloadBtn.onclick = () => {
+    const blob = new Blob([data], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "output.txt";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+}
 
 let shiftActive = false;
 let shiftLocked = false;
@@ -232,43 +296,8 @@ function simulateKeyEvent(keyCode, pressed) {
   document.dispatchEvent(event);
 }
 
-  function printTree(node, indent) {
-  console.log(indent + node.name);
-  if (node.type === "directory" && node.children) {
-    node.children.forEach(child => printTree(child, indent + "  "));
-  }
-}
-
 function vibrate() {
   if (navigator.vibrate) navigator.vibrate(20);
-}
-// ======== File Download Logic ========
-function pollForFile(ci, interval = 2000) {
-  const timer = setInterval(() => {
-    ci.fsReadFile("/out.txt").then(data => {
-      clearInterval(timer);
-      console.log("out.txt is now available!");
-      enableDownload(data);
-    }).catch(err => {
-      console.log("out.txt not found, retrying...");
-    });
-  }, interval);
-}
-
-function enableDownload(data) {
-  downloadBtn.disabled = false;
-  downloadBtn.addEventListener("click", () => {
-    const blob = new Blob([data], { type: "text/plain" });
-    const url = URL.createObjectURL(blob);
-
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "/out.txt";
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  });
 }
 </script>
 
