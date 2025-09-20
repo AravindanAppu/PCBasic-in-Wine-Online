@@ -66,8 +66,6 @@
 <button id="downloadBtn" disabled>Download</button>
 
 <div id="keyboard-container">
-  <!-- Keyboard rows omitted for brevity: same as provided earlier -->
-  <!-- Function keys -->
   <div class="key-row">
     <div class="key" data-key="112">F1</div>
     <div class="key" data-key="113">F2</div>
@@ -154,25 +152,7 @@ const dos = Dos(document.getElementById("dos-root"), {
     console.log("DOS is ready");
     
     try {
-        // Create empty output1.txt
         await ci.fsWriteFile("output1.txt", new TextEncoder().encode(""));
-        
-        // Create autoexec.bat to handle sync
-        const autoexecContent = new TextEncoder().encode(
-            "@echo off\r\n" +
-            "echo Starting GW-BASIC...\r\n" +
-            "gwbasic\r\n" +
-            ":checkloop\r\n" +
-            "if exist output.txt (\r\n" +
-            "  type output.txt > output1.txt\r\n" +
-            "  goto checkloop\r\n" +
-            ")\r\n" +
-            "goto checkloop\r\n"
-        );
-        
-        await ci.fsWriteFile("autoexec.bat", autoexecContent);
-        
-        // Start monitoring
         startMonitoring(ci);
     } catch (err) {
         console.error("Error in setup:", err);
